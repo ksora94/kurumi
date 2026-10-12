@@ -22,6 +22,10 @@ enum Format {
         return "\(change) (\(percent))"
     }
 
+    static func percent(_ move: PriceMove) -> String {
+        String(format: "%+.2f%%", move.changePercent)
+    }
+
     static func time(_ date: Date) -> String {
         date.formatted(date: .omitted, time: .standard)
     }

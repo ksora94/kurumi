@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import SwiftUI
 
 /// View state lives in observable objects instead of `@State`: SwiftUI's property-wrapper
 /// macros ship only with Xcode, and this project builds with the Command Line Tools.
@@ -8,6 +9,17 @@ import Observation
 final class PanelState {
     let search = SearchModel()
     var hoveredSymbol: String?
+    var draggingSymbol: String?
+    private(set) var recentlyAdded: String?
+
+    func markAdded(_ symbol: String) {
+        recentlyAdded = symbol
+        Task {
+            try? await Task.sleep(for: .seconds(1.5))
+            guard recentlyAdded == symbol else { return }
+            withAnimation(.easeOut(duration: 0.4)) { recentlyAdded = nil }
+        }
+    }
 }
 
 @MainActor

@@ -23,7 +23,7 @@ struct SuggestionList: View {
         } else {
             ScrollViewReader { proxy in
                 ScrollView {
-                    VStack(spacing: 0) {
+                    VStack(spacing: panelRowSpacing) {
                         ForEach(Array(search.results.enumerated()), id: \.element.id) { index, result in
                             SuggestionRow(
                                 result: result,
@@ -36,15 +36,20 @@ struct SuggestionList: View {
                             .onHover { if $0 { search.selection = index } }
                         }
                     }
-                    .padding(.vertical, 4)
+                    .padding(panelContentInset)
                 }
-                .frame(height: min(CGFloat(search.results.count) * rowHeight + 8, 360))
+                .frame(height: min(listHeight, 360))
                 .onChange(of: search.selection) { _, selection in
                     guard search.results.indices.contains(selection) else { return }
                     proxy.scrollTo(search.results[selection].id)
                 }
             }
         }
+    }
+
+    private var listHeight: CGFloat {
+        let count = CGFloat(search.results.count)
+        return count * rowHeight + max(count - 1, 0) * panelRowSpacing + panelContentInset * 2
     }
 }
 
@@ -70,12 +75,11 @@ private struct SuggestionRow: View {
             Image(systemName: isAdded ? "checkmark.circle.fill" : "plus.circle")
                 .foregroundStyle(isAdded ? Color.green : Color.secondary)
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 10)
         .frame(maxHeight: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 6)
                 .fill(isSelected ? Color.accentColor.opacity(0.18) : .clear)
-                .padding(.horizontal, 4)
         )
         .contentShape(Rectangle())
     }

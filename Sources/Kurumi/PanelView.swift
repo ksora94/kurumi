@@ -46,6 +46,7 @@ struct PanelView: View {
     private func add(_ result: SearchResult) {
         guard !store.contains(result.symbol) else { return }
         store.add(result)
+        state.markAdded(result.symbol)
         search.clear()
     }
 }
