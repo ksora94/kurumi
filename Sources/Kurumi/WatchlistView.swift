@@ -166,7 +166,10 @@ private struct ChangePill: View {
             .font(.system(size: 11, weight: .semibold).monospacedDigit())
             .foregroundStyle(.white)
             .lineLimit(1)
-            .frame(minWidth: 46)
+            // Fixed size keeps prices aligned; wide values like +15.80% shrink their text to fit
+            // while the pill itself keeps the same width and height (13pt = one 11pt line).
+            .minimumScaleFactor(0.7)
+            .frame(width: 46, height: 13)
             .padding(.horizontal, 4)
             .padding(.vertical, 2)
             .background(RoundedRectangle(cornerRadius: 4).fill(fill))
