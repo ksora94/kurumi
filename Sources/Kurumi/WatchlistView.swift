@@ -106,11 +106,7 @@ private struct WatchRow: View {
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 3) {
                 if let move = quote?.regular {
-                    HStack(spacing: 8) {
-                        Text(Format.price(move.price))
-                            .font(.system(size: 13, weight: .medium).monospacedDigit())
-                        ChangePill(move: move)
-                    }
+                    PriceLine(move: move)
                     if let extended = quote?.extended {
                         HStack(spacing: 4) {
                             Text(extended.session.label)
@@ -140,14 +136,25 @@ private struct WatchRow: View {
                 state.hoveredSymbol = nil
             }
         }
-        .onTapGesture { openYahoo(item.symbol) }
-        .help("点击在浏览器打开，拖动调整顺序，右键删除")
     }
 
     private var background: Color {
         if isHighlighted { return Color.accentColor.opacity(0.2) }
         if isHovering { return Color.primary.opacity(0.07) }
         return .clear
+    }
+}
+
+/// Price followed by the colored change pill; shared by watchlist rows and search suggestions.
+struct PriceLine: View {
+    let move: PriceMove
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text(Format.price(move.price))
+                .font(.system(size: 13, weight: .medium).monospacedDigit())
+            ChangePill(move: move)
+        }
     }
 }
 

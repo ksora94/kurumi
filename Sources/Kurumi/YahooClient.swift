@@ -83,6 +83,24 @@ struct YahooClient: Sendable {
         )
     }
 
+    /// Regular-session price for several symbols in a single request.
+    func regularPrices(_ symbols: [String]) async throws -> [String: PriceMove] {
+        guard !symbols.isEmpty else { return [:] }
+        var components = URLComponents(string: "https://query1.finance.yahoo.com/v7/finance/spark")!
+        components.queryItems = [
+            URLQueryItem(name: "symbols", value: symbols.joined(separator: ",")),
+            URLQueryItem(name: "range", value: "1d"),
+            URLQueryItem(name: "interval", value: "1d"),
+        ]
+        let response: SparkResponse = try await get(components.url!)
+        var prices: [String: PriceMove] = [:]
+        for item in response.spark.result ?? [] {
+            guard let meta = item.response.first?.meta, let price = meta.regularMarketPrice else { continue }
+            prices[item.symbol] = PriceMove(price: price, reference: meta.chartPreviousClose ?? price)
+        }
+        return prices
+    }
+
     /// Pre/post-market price is the latest candle printed after the last regular-session trade.
     private func extendedQuote(_ result: ChartResult, regularPrice: Double) -> ExtendedQuote? {
         guard let regularTime = result.meta.regularMarketTime,
@@ -122,6 +140,28 @@ private struct SearchResponse: Decodable {
         let exchange: String?
         let exchDisp: String?
         let quoteType: String?
+    }
+}
+
+private struct SparkResponse: Decodable {
+    let spark: Spark
+
+    struct Spark: Decodable {
+        let result: [Item]?
+    }
+
+    struct Item: Decodable {
+        let symbol: String
+        let response: [Series]
+    }
+
+    struct Series: Decodable {
+        let meta: Meta
+    }
+
+    struct Meta: Decodable {
+        let regularMarketPrice: Double?
+        let chartPreviousClose: Double?
     }
 }
 
