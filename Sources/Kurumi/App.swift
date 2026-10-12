@@ -68,6 +68,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
     func popoverDidClose(_ notification: Notification) {
         store.isPanelVisible = false
+        panelState.resetPanelNavigation()
     }
 
     private static func statusImage() -> NSImage {

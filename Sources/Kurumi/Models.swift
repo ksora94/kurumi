@@ -75,3 +75,15 @@ struct Quote: Equatable {
     let extended: ExtendedQuote?
     let periods: TradingPeriods?
 }
+
+/// Snapshot of common day / valuation fields for the detail page.
+struct Fundamentals: Equatable {
+    var open: Double?
+    var dayHigh: Double?
+    var dayLow: Double?
+    var previousClose: Double?
+    var volume: Double?
+    var marketCap: Double?
+    var trailingPE: Double?
+    var trailingEps: Double?
+}

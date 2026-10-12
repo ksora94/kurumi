@@ -29,6 +29,46 @@ enum Format {
     static func time(_ date: Date) -> String {
         date.formatted(date: .omitted, time: .standard)
     }
+
+    static func optionalPrice(_ value: Double?) -> String {
+        guard let value else { return "—" }
+        return price(value)
+    }
+
+    static func volume(_ value: Double?) -> String {
+        guard let value else { return "—" }
+        return compact(value, digits: 2)
+    }
+
+    static func marketCap(_ value: Double?) -> String {
+        guard let value else { return "—" }
+        return compact(value, digits: 2)
+    }
+
+    static func ratio(_ value: Double?) -> String {
+        guard let value else { return "—" }
+        return String(format: "%.2f", value)
+    }
+
+    static func eps(_ value: Double?) -> String {
+        guard let value else { return "—" }
+        return String(format: "%.2f", value)
+    }
+
+    private static func compact(_ value: Double, digits: Int) -> String {
+        let abs = abs(value)
+        let (scaled, suffix): (Double, String) = {
+            if abs >= 1_000_000_000_000 { return (value / 1_000_000_000_000, "T") }
+            if abs >= 1_000_000_000 { return (value / 1_000_000_000, "B") }
+            if abs >= 1_000_000 { return (value / 1_000_000, "M") }
+            if abs >= 1_000 { return (value / 1_000, "K") }
+            return (value, "")
+        }()
+        if suffix.isEmpty {
+            return NumberFormatter.localizedString(from: NSNumber(value: scaled), number: .decimal)
+        }
+        return String(format: "%.\(digits)f%@", scaled, suffix)
+    }
 }
 
 extension PriceMove {

@@ -12,12 +12,59 @@ final class PanelState {
     var draggingSymbol: String?
     private(set) var recentlyAdded: String?
 
+    /// When set, the panel shows the detail page for this symbol instead of the list.
+    private(set) var detailSymbol: String?
+    private(set) var fundamentals: Fundamentals?
+    private(set) var fundamentalsLoading = false
+    private(set) var fundamentalsFailed = false
+
+    @ObservationIgnored private var fundamentalsTask: Task<Void, Never>?
+
+    var isShowingDetail: Bool { detailSymbol != nil }
+
     func markAdded(_ symbol: String) {
         recentlyAdded = symbol
         Task {
             try? await Task.sleep(for: .seconds(1.5))
             guard recentlyAdded == symbol else { return }
             withAnimation(.easeOut(duration: 0.4)) { recentlyAdded = nil }
+        }
+    }
+
+    func openDetail(_ symbol: String) {
+        detailSymbol = symbol
+        hoveredSymbol = nil
+        loadFundamentals(for: symbol)
+    }
+
+    func closeDetail() {
+        fundamentalsTask?.cancel()
+        fundamentalsTask = nil
+        detailSymbol = nil
+        fundamentals = nil
+        fundamentalsLoading = false
+        fundamentalsFailed = false
+    }
+
+    /// Reset navigation when the popover closes so the next open lands on the watchlist.
+    func resetPanelNavigation() {
+        search.clear()
+        closeDetail()
+        hoveredSymbol = nil
+        draggingSymbol = nil
+    }
+
+    private func loadFundamentals(for symbol: String) {
+        fundamentalsTask?.cancel()
+        fundamentals = nil
+        fundamentalsFailed = false
+        fundamentalsLoading = true
+        fundamentalsTask = Task {
+            let fetched = try? await YahooClient.shared.fundamentals(symbol)
+            guard !Task.isCancelled, detailSymbol == symbol else { return }
+            fundamentals = fetched
+            fundamentalsFailed = fetched == nil
+            fundamentalsLoading = false
         }
     }
 }

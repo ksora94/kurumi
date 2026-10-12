@@ -8,28 +8,32 @@ struct PanelView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            SearchField(
-                text: Binding(get: { search.query }, set: { search.query = $0 }),
-                placeholder: "搜索美股代码或公司名",
-                onMoveSelection: { search.moveSelection(by: $0) },
-                onSubmit: addSelected,
-                onCancel: {
-                    guard search.isActive else { return false }
-                    search.clear()
-                    return true
-                }
-            )
-            .frame(height: 28)
-            .padding(10)
-
-            Divider()
-
-            if search.isActive {
-                SuggestionList(search: search, store: store, onPick: add)
-            } else if store.items.isEmpty {
-                EmptyWatchlist()
+            if state.isShowingDetail {
+                DetailView(store: store, state: state)
             } else {
-                WatchlistView(store: store, state: state)
+                SearchField(
+                    text: Binding(get: { search.query }, set: { search.query = $0 }),
+                    placeholder: "搜索美股代码或公司名",
+                    onMoveSelection: { search.moveSelection(by: $0) },
+                    onSubmit: addSelected,
+                    onCancel: {
+                        guard search.isActive else { return false }
+                        search.clear()
+                        return true
+                    }
+                )
+                .frame(height: 28)
+                .padding(10)
+
+                Divider()
+
+                if search.isActive {
+                    SuggestionList(search: search, store: store, onPick: add)
+                } else if store.items.isEmpty {
+                    EmptyWatchlist()
+                } else {
+                    WatchlistView(store: store, state: state)
+                }
             }
 
             Divider()

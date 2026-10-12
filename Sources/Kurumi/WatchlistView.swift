@@ -20,19 +20,34 @@ struct WatchlistView: View {
             ScrollView {
                 VStack(spacing: panelRowSpacing) {
                     ForEach(store.items) { item in
-                        WatchRow(item: item, quote: store.quotes[item.symbol], state: state)
-                            .frame(height: Self.rowHeight)
-                            .id(item.symbol)
-                            .contextMenu {
-                                Button("在 Yahoo Finance 打开") { openYahoo(item.symbol) }
-                                Divider()
-                                Button("删除", role: .destructive) { store.remove(item.symbol) }
+                        HStack(spacing: 0) {
+                            // Drag handle keeps reorder without swallowing clicks on the row body.
+                            Image(systemName: "line.3.horizontal")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(.tertiary)
+                                .frame(width: 22, height: Self.rowHeight)
+                                .contentShape(Rectangle())
+                                .onDrag {
+                                    state.draggingSymbol = item.symbol
+                                    return NSItemProvider(object: item.symbol as NSString)
+                                }
+
+                            Button {
+                                state.openDetail(item.symbol)
+                            } label: {
+                                WatchRow(item: item, quote: store.quotes[item.symbol], state: state)
+                                    .frame(height: Self.rowHeight)
+                                    .contentShape(Rectangle())
                             }
-                            .onDrag {
-                                state.draggingSymbol = item.symbol
-                                return NSItemProvider(object: item.symbol as NSString)
-                            }
-                            .onDrop(of: [.text], delegate: ReorderDropDelegate(target: item.symbol, store: store, state: state))
+                            .buttonStyle(.plain)
+                        }
+                        .id(item.symbol)
+                        .contextMenu {
+                            Button("在 Yahoo Finance 打开") { openYahoo(item.symbol) }
+                            Divider()
+                            Button("删除", role: .destructive) { store.remove(item.symbol) }
+                        }
+                        .onDrop(of: [.text], delegate: ReorderDropDelegate(target: item.symbol, store: store, state: state))
                     }
                 }
                 .padding(panelContentInset)
