@@ -75,14 +75,30 @@ struct YahooClient: Sendable {
         else { throw YahooError.noData(symbol) }
 
         let meta = result.meta
-        let reference = meta.previousClose ?? meta.chartPreviousClose ?? price
+        let previousClose = meta.previousClose ?? meta.chartPreviousClose
+        let reference = previousClose ?? price
         return Quote(
             symbol: meta.symbol,
             name: meta.longName ?? meta.shortName,
             regular: PriceMove(price: price, reference: reference),
             extended: extendedQuote(result, regularPrice: price),
-            periods: meta.currentTradingPeriod
+            periods: meta.currentTradingPeriod,
+            previousClose: previousClose,
+            intraday: Self.intradayPoints(from: result)
         )
+    }
+
+    private static func intradayPoints(from result: ChartResult) -> [IntradayPoint] {
+        guard let timestamps = result.timestamp,
+              let closes = result.indicators.quote.first?.close
+        else { return [] }
+        var points: [IntradayPoint] = []
+        points.reserveCapacity(min(timestamps.count, closes.count))
+        for index in 0..<min(timestamps.count, closes.count) {
+            guard let close = closes[index] else { continue }
+            points.append(IntradayPoint(id: index, time: timestamps[index], price: close))
+        }
+        return points
     }
 
     /// Day stats + valuation fields for the detail page (cookie/crumb required).

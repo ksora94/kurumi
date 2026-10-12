@@ -68,12 +68,22 @@ struct ExtendedQuote: Equatable {
     let move: PriceMove
 }
 
+struct IntradayPoint: Equatable, Identifiable {
+    let id: Int
+    let time: Date
+    let price: Double
+}
+
 struct Quote: Equatable {
     let symbol: String
     let name: String?
     let regular: PriceMove
     let extended: ExtendedQuote?
     let periods: TradingPeriods?
+    /// Yesterday's close used as the day reference (and chart baseline).
+    let previousClose: Double?
+    /// Intraday 1m closes for the detail chart (includes pre/post when available).
+    let intraday: [IntradayPoint]
 }
 
 /// Snapshot of common day / valuation fields for the detail page.
