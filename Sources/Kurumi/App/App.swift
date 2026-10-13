@@ -1,4 +1,5 @@
 import AppKit
+import Observation
 import SwiftUI
 
 @main
@@ -73,8 +74,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         popover.behavior = .transient
         popover.delegate = self
 
+        observeAppearance()
         store.start()
         ticker?.start()
+    }
+
+    /// The status item itself stays with the menu bar; only the app's own windows and menus
+    /// take the chosen appearance. The popover and menu are set directly because they would
+    /// otherwise inherit the menu bar's appearance from the status item.
+    private func observeAppearance() {
+        let appearance = withObservationTracking {
+            AppSettings.shared.appearance.nsAppearance
+        } onChange: { [weak self] in
+            Task { @MainActor in self?.observeAppearance() }
+        }
+        NSApp.appearance = appearance
+        popover.appearance = appearance
+        statusMenu.appearance = appearance
     }
 
     @objc private func statusItemClicked(_ sender: NSStatusBarButton) {

@@ -1,7 +1,30 @@
-import Foundation
+import AppKit
 import Observation
 import ServiceManagement
 import SwiftUI
+
+enum AppearancePreference: String, CaseIterable, Identifiable {
+    case system, light, dark
+
+    var id: Self { self }
+
+    @MainActor var label: String {
+        switch self {
+        case .system: Loc.followSystem
+        case .light: Loc.lightAppearance
+        case .dark: Loc.darkAppearance
+        }
+    }
+
+    /// `nil` lets AppKit follow the system appearance.
+    var nsAppearance: NSAppearance? {
+        switch self {
+        case .system: nil
+        case .light: NSAppearance(named: .aqua)
+        case .dark: NSAppearance(named: .darkAqua)
+        }
+    }
+}
 
 enum PriceColorScheme: String, CaseIterable, Identifiable {
     case greenUp, redUp
@@ -45,6 +68,10 @@ final class AppSettings {
     /// The language the UI is shown in.
     var language: Language { languagePreference.resolved }
 
+    var appearance: AppearancePreference {
+        didSet { defaults.set(appearance.rawValue, forKey: Keys.appearance) }
+    }
+
     var colorScheme: PriceColorScheme {
         didSet { defaults.set(colorScheme.rawValue, forKey: Keys.colorScheme) }
     }
@@ -79,6 +106,7 @@ final class AppSettings {
 
     private enum Keys {
         static let languagePreference = "languagePreference"
+        static let appearance = "appearance"
         static let colorScheme = "colorScheme"
         static let showsMenuBarPrices = "showsMenuBarPrices"
         static let menuBarContent = "menuBarContent"
@@ -90,6 +118,7 @@ final class AppSettings {
     private init() {
         let defaults = UserDefaults.standard
         languagePreference = LanguagePreference(rawValue: defaults.string(forKey: Keys.languagePreference) ?? "") ?? .system
+        appearance = AppearancePreference(rawValue: defaults.string(forKey: Keys.appearance) ?? "") ?? .system
         colorScheme = PriceColorScheme(rawValue: defaults.string(forKey: Keys.colorScheme) ?? "") ?? .greenUp
         showsMenuBarPrices = defaults.object(forKey: Keys.showsMenuBarPrices) as? Bool ?? true
         menuBarContent = MenuBarContent(rawValue: defaults.string(forKey: Keys.menuBarContent) ?? "") ?? .price

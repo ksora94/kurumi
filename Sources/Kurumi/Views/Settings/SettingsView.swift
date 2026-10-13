@@ -70,6 +70,9 @@ private struct GeneralSettings: View {
                 Picker(Loc.language, selection: binding(settings, \.languagePreference)) {
                     ForEach(LanguagePreference.allCases) { Text($0.label).tag($0) }
                 }
+                Picker(Loc.appearance, selection: binding(settings, \.appearance)) {
+                    ForEach(AppearancePreference.allCases) { Text($0.label).tag($0) }
+                }
                 Picker(Loc.colorScheme, selection: binding(settings, \.colorScheme)) {
                     ForEach(PriceColorScheme.allCases) { Text($0.label).tag($0) }
                 }

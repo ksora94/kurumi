@@ -113,6 +113,9 @@ enum Loc {
     static var about: String { pick("关于", "About", "情報") }
     static var language: String { pick("语言", "Language", "言語") }
     static var followSystem: String { pick("跟随系统", "System", "システムに従う") }
+    static var appearance: String { pick("外观", "Appearance", "外観") }
+    static var lightAppearance: String { pick("浅色", "Light", "ライト") }
+    static var darkAppearance: String { pick("深色", "Dark", "ダーク") }
     static var colorScheme: String { pick("涨跌配色", "Price Colors", "騰落の色") }
     static var greenUp: String { pick("绿涨红跌", "Green up, red down", "上昇は緑、下落は赤") }
     static var redUp: String { pick("红涨绿跌", "Red up, green down", "上昇は赤、下落は緑") }
