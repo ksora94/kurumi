@@ -23,13 +23,15 @@ struct CandleChart: View {
         let hi = candles.map(\.high).max() ?? 1
         let pad = max((hi - lo) * 0.08, hi * 0.001)
         let minBody = (hi - lo) * 0.003
+        let upColor = AppSettings.shared.upColor
+        let downColor = AppSettings.shared.downColor
 
         return GeometryReader { geometry in
             let slot = (geometry.size.width - Self.yAxisWidth) / CGFloat(candles.count)
             let bodyWidth = max(slot * 0.6, 1)
 
             Chart(candles) { candle in
-                let color = candle.close >= candle.open ? Color.green : Color.red
+                let color = candle.close >= candle.open ? upColor : downColor
                 let bodyLow = min(candle.open, candle.close)
                 let bodyHigh = max(max(candle.open, candle.close), bodyLow + minBody)
 

@@ -110,7 +110,7 @@ final class WatchlistStore {
     private func nextPollDelay() -> TimeInterval {
         let now = Date.now
         if session(at: now).isActive {
-            return isPanelVisible ? 5 : 20
+            return isPanelVisible ? 5 : TimeInterval(AppSettings.shared.refreshInterval)
         }
         let idle: TimeInterval = 30 * 60
         if let start = periods?.pre.start, start > now {

@@ -11,13 +11,13 @@ final class MenuBarTicker: NSObject {
         let move: PriceMove
     }
 
-    private static let interval: Duration = .seconds(5)
     /// Space between the tag and the edges of the status item.
     private static let horizontalMargin: CGFloat = 4
 
     private let statusItem: NSStatusItem
     private let store: WatchlistStore
     private let icon: NSImage
+    private let settings = AppSettings.shared
     private var index = 0
     private var isHovering = false
     private var cycleTask: Task<Void, Never>?
@@ -39,7 +39,8 @@ final class MenuBarTicker: NSObject {
             options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
             owner: self
         ))
-        observeStore()
+        observeContent()
+        observeInterval()
         render(animated: false)
         restartCycle()
     }
@@ -55,27 +56,45 @@ final class MenuBarTicker: NSObject {
     }
 
     private var entries: [Entry] {
-        store.items.compactMap { item in
+        guard settings.showsMenuBarPrices else { return [] }
+        return store.items.compactMap { item in
             store.quotes[item.symbol].map { Entry(symbol: item.symbol, move: $0.latestMove) }
         }
     }
 
-    private func observeStore() {
+    /// Redraws whenever quotes or display preferences change.
+    private func observeContent() {
         withObservationTracking {
             _ = entries
+            _ = settings.menuBarContent
+            _ = settings.colorScheme
         } onChange: { [weak self] in
             Task { @MainActor in
                 self?.render(animated: false)
-                self?.observeStore()
+                self?.observeContent()
+            }
+        }
+    }
+
+    /// Kept separate from content so routine quote refreshes don't reset the slide timer.
+    private func observeInterval() {
+        withObservationTracking {
+            _ = settings.scrollInterval
+        } onChange: { [weak self] in
+            Task { @MainActor in
+                self?.restartCycle()
+                self?.observeInterval()
             }
         }
     }
 
     private func restartCycle() {
         cycleTask?.cancel()
+        guard !isHovering else { return }
         cycleTask = Task { [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(for: Self.interval)
+                guard let interval = self?.settings.scrollInterval else { return }
+                try? await Task.sleep(for: .seconds(interval))
                 guard !Task.isCancelled, let self, !self.isHovering else { return }
                 let count = self.entries.count
                 guard count > 1 else { continue }
@@ -133,7 +152,7 @@ final class MenuBarTicker: NSObject {
         return renderer.nsImage
     }
 
-    /// The price in white on a red / green rounded tag.
+    /// The price or change percent in white on a rounded tag colored by direction.
     private struct TickerTag: View {
         let entry: Entry
         let width: CGFloat?
@@ -143,20 +162,21 @@ final class MenuBarTicker: NSObject {
         private static let leadingGap: CGFloat = 4
 
         var body: some View {
-            Text(Format.price(entry.move.price))
+            Text(text)
                 .font(.system(size: 11, weight: .medium).monospacedDigit())
                 .foregroundStyle(.white)
                 .lineLimit(1)
                 .padding(.horizontal, 4)
                 .frame(width: width.map { $0 - Self.leadingGap }, height: Self.height)
-                .background(RoundedRectangle(cornerRadius: 4).fill(fill))
+                .background(RoundedRectangle(cornerRadius: 4).fill(entry.move.fillColor))
                 .padding(.leading, Self.leadingGap)
         }
 
-        private var fill: Color {
-            if entry.move.change > 0 { return .green }
-            if entry.move.change < 0 { return .red }
-            return .gray
+        private var text: String {
+            switch AppSettings.shared.menuBarContent {
+            case .price: Format.price(entry.move.price)
+            case .percent: Format.percent(entry.move)
+            }
         }
     }
 }

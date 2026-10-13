@@ -20,12 +20,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private let popover = NSPopover()
     private var statusItem: NSStatusItem!
     private var ticker: MenuBarTicker?
+    private let settingsWindow = SettingsWindowController()
 
     private lazy var statusMenu: NSMenu = {
         let menu = NSMenu()
-        menu.addItem(withTitle: "退出 Kurumi", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        menu.addItem(plainMenuItem("设置", action: #selector(openSettings)))
+        menu.addItem(plainMenuItem("退出", action: #selector(quit)))
         return menu
     }()
+
+    /// No key equivalent and no system-supplied icon.
+    private func plainMenuItem(_ title: String, action: Selector) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+        item.target = self
+        if #available(macOS 27.0, *) {
+            item.preferredImageVisibility = .hidden
+        }
+        return item
+    }
+
+    @objc private func openSettings() {
+        popover.performClose(nil)
+        settingsWindow.show()
+    }
+
+    @objc private func quit() {
+        NSApp.terminate(nil)
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.mainMenu = makeMainMenu()

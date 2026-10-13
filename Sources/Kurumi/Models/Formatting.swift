@@ -72,10 +72,15 @@ enum Format {
 }
 
 extension PriceMove {
-    /// US convention: green for up, red for down.
-    var color: Color {
-        if change > 0 { return .green }
-        if change < 0 { return .red }
+    /// Text color for the move, following the user's up / down color preference.
+    @MainActor var color: Color {
+        if change > 0 { return AppSettings.shared.upColor }
+        if change < 0 { return AppSettings.shared.downColor }
         return .secondary
+    }
+
+    /// Background for colored tags; flat moves get a neutral gray.
+    @MainActor var fillColor: Color {
+        change == 0 ? .gray : color
     }
 }

@@ -125,9 +125,14 @@ struct Quote: Equatable {
     /// Intraday 1m closes for the detail chart (includes pre/post when available).
     let intraday: [IntradayPoint]
 
-    /// Most recent trade (pre/post-market when there is one), measured against yesterday's close.
-    var latestMove: PriceMove {
-        PriceMove(price: extended?.move.price ?? regular.price, reference: regular.price - regular.change)
+    /// Pre/post-market quote, unless the user turned extended hours off.
+    @MainActor var visibleExtended: ExtendedQuote? {
+        AppSettings.shared.showsExtendedHours ? extended : nil
+    }
+
+    /// Most recent visible trade, measured against yesterday's close.
+    @MainActor var latestMove: PriceMove {
+        PriceMove(price: visibleExtended?.move.price ?? regular.price, reference: regular.price - regular.change)
     }
 }
 

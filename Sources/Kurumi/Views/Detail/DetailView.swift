@@ -71,7 +71,7 @@ struct DetailView: View {
                         .font(.system(size: 11, weight: .medium).monospacedDigit())
                         .foregroundStyle(move.color)
                 }
-                if let extended = quote?.extended {
+                if let extended = quote?.visibleExtended {
                     HStack(spacing: 6) {
                         Text(extended.session.label)
                         Text(Format.price(extended.move.price))
