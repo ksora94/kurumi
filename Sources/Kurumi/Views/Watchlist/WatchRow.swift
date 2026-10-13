@@ -122,7 +122,7 @@ private struct WatchRowContent: View {
             VStack(alignment: .trailing, spacing: 3) {
                 if let move = quote?.regular {
                     PriceLine(move: move)
-                    if let extended = quote?.extended {
+                    if let extended = quote?.visibleExtended {
                         HStack(spacing: 4) {
                             Text(extended.session.label)
                                 .foregroundStyle(.secondary)

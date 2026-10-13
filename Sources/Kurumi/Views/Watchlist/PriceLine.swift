@@ -27,12 +27,6 @@ private struct ChangePill: View {
             .frame(width: 46, height: 13)
             .padding(.horizontal, 4)
             .padding(.vertical, 2)
-            .background(RoundedRectangle(cornerRadius: 4).fill(fill))
-    }
-
-    private var fill: Color {
-        if move.change > 0 { return .green }
-        if move.change < 0 { return .red }
-        return .gray
+            .background(RoundedRectangle(cornerRadius: 4).fill(move.fillColor))
     }
 }

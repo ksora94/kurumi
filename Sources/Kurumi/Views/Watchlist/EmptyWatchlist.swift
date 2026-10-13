@@ -8,10 +8,10 @@ struct EmptyWatchlist: View {
             Image(systemName: "chart.line.uptrend.xyaxis")
                 .font(.system(size: 22))
                 .foregroundStyle(.tertiary)
-            Text("还没有自选股票")
+            Text(Loc.emptyWatchlist)
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
-            Button("添加股票", action: onAdd)
+            Button(Loc.addStock, action: onAdd)
                 .controlSize(.small)
                 .pointerCursor()
         }
