@@ -19,6 +19,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private let panelState = PanelState()
     private let popover = NSPopover()
     private var statusItem: NSStatusItem!
+    private var ticker: MenuBarTicker?
 
     private lazy var statusMenu: NSMenu = {
         let menu = NSMenu()
@@ -30,12 +31,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         NSApp.mainMenu = makeMainMenu()
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        let icon = Self.statusImage()
         if let button = statusItem.button {
-            button.image = Self.statusImage()
+            button.image = icon
             button.target = self
             button.action = #selector(statusItemClicked(_:))
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         }
+        ticker = MenuBarTicker(statusItem: statusItem, store: store, icon: icon)
 
         let hosting = NSHostingController(rootView: PanelView(store: store, state: panelState))
         hosting.sizingOptions = [.preferredContentSize]
@@ -44,6 +47,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         popover.delegate = self
 
         store.start()
+        ticker?.start()
     }
 
     @objc private func statusItemClicked(_ sender: NSStatusBarButton) {

@@ -124,6 +124,11 @@ struct Quote: Equatable {
     let previousClose: Double?
     /// Intraday 1m closes for the detail chart (includes pre/post when available).
     let intraday: [IntradayPoint]
+
+    /// Most recent trade (pre/post-market when there is one), measured against yesterday's close.
+    var latestMove: PriceMove {
+        PriceMove(price: extended?.move.price ?? regular.price, reference: regular.price - regular.change)
+    }
 }
 
 /// Snapshot of common day / valuation fields for the detail page.
