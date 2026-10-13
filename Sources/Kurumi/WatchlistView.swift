@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
+let panelWidth: CGFloat = 320
 /// Gap between row blocks and the panel edges / dividers.
 let panelContentInset: CGFloat = 4
 let panelRowSpacing: CGFloat = 4
@@ -20,28 +21,9 @@ struct WatchlistView: View {
             ScrollView {
                 VStack(spacing: panelRowSpacing) {
                     ForEach(store.items) { item in
-                        HStack(spacing: 0) {
-                            // Drag handle keeps reorder without swallowing clicks on the row body.
-                            Image(systemName: "line.3.horizontal")
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundStyle(.tertiary)
-                                .frame(width: 22, height: Self.rowHeight)
-                                .contentShape(Rectangle())
-                                .onDrag {
-                                    state.draggingSymbol = item.symbol
-                                    return NSItemProvider(object: item.symbol as NSString)
-                                }
-
-                            Button {
-                                state.openDetail(item.symbol)
-                            } label: {
-                                WatchRow(item: item, quote: store.quotes[item.symbol], state: state)
-                                    .frame(height: Self.rowHeight)
-                                    .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        .id(item.symbol)
+                        WatchRow(item: item, quote: store.quotes[item.symbol], state: state)
+                            .frame(height: Self.rowHeight)
+                            .id(item.symbol)
                         .contextMenu {
                             Button("在 Yahoo Finance 打开") { openYahoo(item.symbol) }
                             Divider()
@@ -90,7 +72,7 @@ private struct ReorderDropDelegate: DropDelegate {
     }
 
     func performDrop(info: DropInfo) -> Bool {
-        state.draggingSymbol = nil
+        state.endDrag()
         return true
     }
 }
@@ -100,13 +82,104 @@ func openYahoo(_ symbol: String) {
     NSWorkspace.shared.open(url)
 }
 
+/// The drag handle only appears while hovering the row's left edge; it slides the symbol/name
+/// right to make room, and stays outside the button so dragging it never opens the detail page.
 private struct WatchRow: View {
     let item: WatchItem
     let quote: Quote?
     let state: PanelState
 
+    private static let contentInset: CGFloat = 10
+    private static let handleWidth: CGFloat = 26
+    /// Measured from the row's own (unshifted) leading edge, so revealing the handle and
+    /// sliding the text doesn't move the zone.
+    private static let handleZoneWidth: CGFloat = 40
+
     private var isHovering: Bool { state.hoveredSymbol == item.symbol }
+    private var showsHandle: Bool { state.handleSymbol == item.symbol }
     private var isHighlighted: Bool { state.recentlyAdded == item.symbol }
+    private var isDragging: Bool { state.draggingSymbol == item.symbol }
+
+    var body: some View {
+        ZStack(alignment: .leading) {
+            Button {
+                state.openDetail(item.symbol)
+            } label: {
+                WatchRowContent(item: item, quote: quote)
+                    .padding(.leading, showsHandle ? Self.handleWidth : Self.contentInset)
+                    .padding(.trailing, Self.contentInset)
+                    .frame(maxHeight: .infinity)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            Image(systemName: "line.3.horizontal")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.tertiary)
+                .frame(width: Self.handleWidth)
+                .frame(maxHeight: .infinity)
+                .overlay(
+                    DragHandle(
+                        symbol: item.symbol,
+                        rowWidth: panelWidth - panelContentInset * 2,
+                        preview: { DragPreviewCard(item: item, quote: quote) },
+                        onBegin: { state.beginDrag(item.symbol) },
+                        onEnd: { state.endDrag() }
+                    )
+                )
+                .opacity(showsHandle ? 1 : 0)
+                .allowsHitTesting(showsHandle)
+        }
+        .background(RoundedRectangle(cornerRadius: 6).fill(background))
+        .opacity(isDragging ? 0.3 : 1)
+        .animation(.easeOut(duration: 0.15), value: showsHandle)
+        .animation(.easeOut(duration: 0.15), value: isDragging)
+        .onContinuousHover { phase in
+            switch phase {
+            case .active(let location):
+                state.hoveredSymbol = item.symbol
+                if location.x < Self.handleZoneWidth {
+                    state.handleSymbol = item.symbol
+                } else if showsHandle {
+                    state.handleSymbol = nil
+                }
+            case .ended:
+                if isHovering { state.hoveredSymbol = nil }
+                if showsHandle { state.handleSymbol = nil }
+            }
+        }
+    }
+
+    private var background: Color {
+        if isHighlighted { return Color.accentColor.opacity(0.2) }
+        if isHovering { return Color.primary.opacity(0.07) }
+        return .clear
+    }
+}
+
+/// What follows the cursor while reordering: the row lifted off the list as a card.
+private struct DragPreviewCard: View {
+    let item: WatchItem
+    let quote: Quote?
+
+    var body: some View {
+        WatchRowContent(item: item, quote: quote)
+            .padding(.horizontal, 10)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(Color(nsColor: .windowBackgroundColor))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .strokeBorder(Color.primary.opacity(0.1))
+            )
+    }
+}
+
+private struct WatchRowContent: View {
+    let item: WatchItem
+    let quote: Quote?
 
     var body: some View {
         HStack(spacing: 8) {
@@ -140,23 +213,6 @@ private struct WatchRow: View {
             }
             .fixedSize()
         }
-        .padding(.horizontal, 10)
-        .frame(maxHeight: .infinity)
-        .background(RoundedRectangle(cornerRadius: 6).fill(background))
-        .contentShape(Rectangle())
-        .onHover { hovering in
-            if hovering {
-                state.hoveredSymbol = item.symbol
-            } else if isHovering {
-                state.hoveredSymbol = nil
-            }
-        }
-    }
-
-    private var background: Color {
-        if isHighlighted { return Color.accentColor.opacity(0.2) }
-        if isHovering { return Color.primary.opacity(0.07) }
-        return .clear
     }
 }
 

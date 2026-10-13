@@ -9,7 +9,9 @@ import SwiftUI
 final class PanelState {
     let search = SearchModel()
     var hoveredSymbol: String?
-    var draggingSymbol: String?
+    /// Row whose left edge is hovered, which reveals its drag handle.
+    var handleSymbol: String?
+    private(set) var draggingSymbol: String?
     private(set) var recentlyAdded: String?
 
     /// When set, the panel shows the detail page for this symbol instead of the list.
@@ -21,6 +23,15 @@ final class PanelState {
     @ObservationIgnored private var fundamentalsTask: Task<Void, Never>?
 
     var isShowingDetail: Bool { detailSymbol != nil }
+
+    func beginDrag(_ symbol: String) {
+        draggingSymbol = symbol
+    }
+
+    func endDrag() {
+        guard draggingSymbol != nil else { return }
+        withAnimation(.easeOut(duration: 0.15)) { draggingSymbol = nil }
+    }
 
     func markAdded(_ symbol: String) {
         recentlyAdded = symbol
@@ -34,6 +45,7 @@ final class PanelState {
     func openDetail(_ symbol: String) {
         detailSymbol = symbol
         hoveredSymbol = nil
+        handleSymbol = nil
         loadFundamentals(for: symbol)
     }
 
@@ -51,7 +63,8 @@ final class PanelState {
         search.clear()
         closeDetail()
         hoveredSymbol = nil
-        draggingSymbol = nil
+        handleSymbol = nil
+        endDrag()
     }
 
     private func loadFundamentals(for symbol: String) {

@@ -39,7 +39,7 @@ struct PanelView: View {
             Divider()
             FooterView(store: store)
         }
-        .frame(width: 320)
+        .frame(width: panelWidth)
     }
 
     private func addSelected() {
