@@ -21,7 +21,9 @@ struct WatchlistView: View {
             ScrollView {
                 VStack(spacing: panelRowSpacing) {
                     ForEach(store.items) { item in
-                        WatchRow(item: item, quote: store.quotes[item.symbol], state: state)
+                        WatchRow(item: item, quote: store.quotes[item.symbol], state: state) {
+                            delete(item.symbol)
+                        }
                             .frame(height: Self.rowHeight)
                             .id(item.symbol)
                         .contextMenu {
@@ -41,7 +43,17 @@ struct WatchlistView: View {
                     proxy.scrollTo(symbol, anchor: .bottom)
                 }
             }
+            .background {
+                if state.isSorting {
+                    EscapeMonitor { state.endSorting() }
+                }
+            }
         }
+    }
+
+    private func delete(_ symbol: String) {
+        withAnimation(.easeOut(duration: 0.2)) { store.remove(symbol) }
+        if store.items.isEmpty { state.endSorting() }
     }
 
     private var listHeight: CGFloat {
@@ -82,43 +94,47 @@ func openYahoo(_ symbol: String) {
     NSWorkspace.shared.open(url)
 }
 
-/// The drag handle only appears while hovering the row's left edge; it slides the symbol/name
-/// right to make room, and stays outside the button so dragging it never opens the detail page.
+/// In sort mode the row shows a handle on the left and a delete button on the right; the whole
+/// row (minus the delete button) becomes the drag source and no longer opens the detail page.
 private struct WatchRow: View {
     let item: WatchItem
     let quote: Quote?
     let state: PanelState
+    let onDelete: () -> Void
 
     private static let contentInset: CGFloat = 10
     private static let handleWidth: CGFloat = 26
-    /// Measured from the row's own (unshifted) leading edge, so revealing the handle and
-    /// sliding the text doesn't move the zone.
-    private static let handleZoneWidth: CGFloat = 40
+    private static let deleteWidth: CGFloat = 30
 
+    private var isSorting: Bool { state.isSorting }
     private var isHovering: Bool { state.hoveredSymbol == item.symbol }
-    private var showsHandle: Bool { state.handleSymbol == item.symbol }
     private var isHighlighted: Bool { state.recentlyAdded == item.symbol }
     private var isDragging: Bool { state.draggingSymbol == item.symbol }
 
     var body: some View {
-        ZStack(alignment: .leading) {
+        HStack(spacing: 0) {
             Button {
                 state.openDetail(item.symbol)
             } label: {
-                WatchRowContent(item: item, quote: quote)
-                    .padding(.leading, showsHandle ? Self.handleWidth : Self.contentInset)
-                    .padding(.trailing, Self.contentInset)
-                    .frame(maxHeight: .infinity)
-                    .contentShape(Rectangle())
+                HStack(spacing: 0) {
+                    if isSorting {
+                        Image(systemName: "line.3.horizontal")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.tertiary)
+                            .frame(width: Self.handleWidth)
+                            .transition(.move(edge: .leading).combined(with: .opacity))
+                    }
+                    WatchRowContent(item: item, quote: quote)
+                        .padding(.leading, isSorting ? 0 : Self.contentInset)
+                        .padding(.trailing, isSorting ? 0 : Self.contentInset)
+                }
+                .frame(maxHeight: .infinity)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-
-            Image(systemName: "line.3.horizontal")
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.tertiary)
-                .frame(width: Self.handleWidth)
-                .frame(maxHeight: .infinity)
-                .overlay(
+            .allowsHitTesting(!isSorting)
+            .overlay {
+                if isSorting {
                     DragHandle(
                         symbol: item.symbol,
                         rowWidth: panelWidth - panelContentInset * 2,
@@ -126,26 +142,31 @@ private struct WatchRow: View {
                         onBegin: { state.beginDrag(item.symbol) },
                         onEnd: { state.endDrag() }
                     )
-                )
-                .opacity(showsHandle ? 1 : 0)
-                .allowsHitTesting(showsHandle)
+                }
+            }
+
+            if isSorting {
+                Button(action: onDelete) {
+                    Image(systemName: "minus.circle")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.tertiary)
+                        .frame(width: Self.deleteWidth)
+                        .frame(maxHeight: .infinity)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .pointerCursor()
+                .transition(.move(edge: .trailing).combined(with: .opacity))
+            }
         }
         .background(RoundedRectangle(cornerRadius: 6).fill(background))
         .opacity(isDragging ? 0.3 : 1)
-        .animation(.easeOut(duration: 0.15), value: showsHandle)
         .animation(.easeOut(duration: 0.15), value: isDragging)
-        .onContinuousHover { phase in
-            switch phase {
-            case .active(let location):
+        .onHover { hovering in
+            if hovering {
                 state.hoveredSymbol = item.symbol
-                if location.x < Self.handleZoneWidth {
-                    state.handleSymbol = item.symbol
-                } else if showsHandle {
-                    state.handleSymbol = nil
-                }
-            case .ended:
-                if isHovering { state.hoveredSymbol = nil }
-                if showsHandle { state.handleSymbol = nil }
+            } else if isHovering {
+                state.hoveredSymbol = nil
             }
         }
     }

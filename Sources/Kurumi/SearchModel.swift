@@ -9,8 +9,8 @@ import SwiftUI
 final class PanelState {
     let search = SearchModel()
     var hoveredSymbol: String?
-    /// Row whose left edge is hovered, which reveals its drag handle.
-    var handleSymbol: String?
+    /// Sort mode shows drag handles and delete buttons on every row; rows don't open details.
+    private(set) var isSorting = false
     private(set) var draggingSymbol: String?
     private(set) var recentlyAdded: String?
 
@@ -23,6 +23,28 @@ final class PanelState {
     @ObservationIgnored private var fundamentalsTask: Task<Void, Never>?
 
     var isShowingDetail: Bool { detailSymbol != nil }
+
+    /// The search page replaces the list; the search field only exists there.
+    private(set) var isSearching = false
+
+    func openSearch() {
+        hoveredSymbol = nil
+        isSearching = true
+    }
+
+    func toggleSorting() {
+        withAnimation(.easeOut(duration: 0.15)) { isSorting.toggle() }
+    }
+
+    func endSorting() {
+        guard isSorting else { return }
+        withAnimation(.easeOut(duration: 0.15)) { isSorting = false }
+    }
+
+    func closeSearch() {
+        search.clear()
+        isSearching = false
+    }
 
     func beginDrag(_ symbol: String) {
         draggingSymbol = symbol
@@ -45,7 +67,6 @@ final class PanelState {
     func openDetail(_ symbol: String) {
         detailSymbol = symbol
         hoveredSymbol = nil
-        handleSymbol = nil
         loadFundamentals(for: symbol)
     }
 
@@ -60,10 +81,10 @@ final class PanelState {
 
     /// Reset navigation when the popover closes so the next open lands on the watchlist.
     func resetPanelNavigation() {
-        search.clear()
+        closeSearch()
         closeDetail()
         hoveredSymbol = nil
-        handleSymbol = nil
+        isSorting = false
         endDrag()
     }
 

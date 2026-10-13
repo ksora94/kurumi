@@ -42,20 +42,7 @@ struct DetailView: View {
 
     private var headerBar: some View {
         HStack(spacing: 8) {
-            Button {
-                state.closeDetail()
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 11, weight: .semibold))
-                    Text("返回")
-                        .font(.system(size: 12, weight: .medium))
-                }
-                .foregroundStyle(.secondary)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .pointerCursor()
+            BackButton { state.closeDetail() }
 
             Spacer(minLength: 8)
 
@@ -249,7 +236,7 @@ private struct IntradayChart: View {
 }
 
 /// Popovers often don't put SwiftUI in the key responder chain, so Escape is also watched here.
-private struct EscapeMonitor: NSViewRepresentable {
+struct EscapeMonitor: NSViewRepresentable {
     let onEscape: () -> Void
 
     func makeNSView(context: Context) -> NSView {
