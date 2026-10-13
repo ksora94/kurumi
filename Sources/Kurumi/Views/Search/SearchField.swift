@@ -1,11 +1,8 @@
 import AppKit
 import SwiftUI
 
-extension Notification.Name {
-    static let kurumiPanelDidShow = Notification.Name("KurumiPanelDidShow")
-}
-
 /// NSSearchField wrapper, since SwiftUI's TextField doesn't reliably hand arrow keys to us.
+/// Takes focus as soon as it appears, since it only exists on the search page.
 struct SearchField: NSViewRepresentable {
     @Binding var text: String
     var placeholder: String
@@ -19,14 +16,13 @@ struct SearchField: NSViewRepresentable {
     }
 
     func makeNSView(context: Context) -> NSSearchField {
-        let field = NSSearchField()
+        let field = AutofocusSearchField()
         field.placeholderString = placeholder
         field.delegate = context.coordinator
         field.focusRingType = .none
         field.bezelStyle = .roundedBezel
         field.controlSize = .large
         field.sendsSearchStringImmediately = true
-        context.coordinator.field = field
         return field
     }
 
@@ -37,24 +33,19 @@ struct SearchField: NSViewRepresentable {
         }
     }
 
+    private final class AutofocusSearchField: NSSearchField {
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            guard let window else { return }
+            DispatchQueue.main.async { window.makeFirstResponder(self) }
+        }
+    }
+
     final class Coordinator: NSObject, NSSearchFieldDelegate {
         var parent: SearchField
-        weak var field: NSSearchField?
-        private var observer: NSObjectProtocol?
 
         init(_ parent: SearchField) {
             self.parent = parent
-            super.init()
-            observer = NotificationCenter.default.addObserver(
-                forName: .kurumiPanelDidShow, object: nil, queue: .main
-            ) { [weak self] _ in
-                guard let field = self?.field else { return }
-                field.window?.makeFirstResponder(field)
-            }
-        }
-
-        deinit {
-            if let observer { NotificationCenter.default.removeObserver(observer) }
         }
 
         func controlTextDidChange(_ notification: Notification) {

@@ -9,9 +9,21 @@ BUNDLE_ID="com.cyan.kurumi"
 VERSION="0.1.0"
 APP_DIR="build/${APP_NAME}.app"
 
-# The default swift-build backend needs Xcode; the native one works with Command Line Tools.
-swift build -c release --build-system native
-BIN_DIR="$(swift build -c release --build-system native --show-bin-path)"
+# Prefer SwiftPM. On some CLT installs (e.g. Swift 6.4 on macOS 27) PackageDescription
+# symbols don't link, so fall back to compiling Sources directly with swiftc.
+BIN_DIR="build/bin"
+mkdir -p "$BIN_DIR"
+if swift build -c release --build-system native; then
+    BIN_DIR="$(swift build -c release --build-system native --show-bin-path)"
+else
+    echo "SwiftPM build failed; compiling with swiftc instead..." >&2
+    swiftc -O \
+        -target "$(uname -m)-apple-macosx14.0" \
+        -sdk "$(xcrun --show-sdk-path)" \
+        -parse-as-library \
+        $(find Sources/Kurumi -name '*.swift') \
+        -o "$BIN_DIR/$APP_NAME"
+fi
 
 # Prefer the vector glyph so the app icon stays sharp at every size.
 GLYPH="icon.svg"

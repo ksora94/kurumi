@@ -13,7 +13,7 @@ struct SuggestionList: View {
                 if search.isLoading {
                     ProgressView().controlSize(.small)
                 } else {
-                    Text(search.failed ? "搜索失败，请检查网络" : "没有找到匹配的美股")
+                    Text("没有找到相关股票")
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                 }
@@ -23,10 +23,11 @@ struct SuggestionList: View {
         } else {
             ScrollViewReader { proxy in
                 ScrollView {
-                    VStack(spacing: 0) {
+                    VStack(spacing: panelRowSpacing) {
                         ForEach(Array(search.results.enumerated()), id: \.element.id) { index, result in
                             SuggestionRow(
                                 result: result,
+                                price: search.prices[result.symbol],
                                 isSelected: index == search.selection,
                                 isAdded: store.contains(result.symbol)
                             )
@@ -36,9 +37,9 @@ struct SuggestionList: View {
                             .onHover { if $0 { search.selection = index } }
                         }
                     }
-                    .padding(.vertical, 4)
+                    .padding(panelContentInset)
                 }
-                .frame(height: min(CGFloat(search.results.count) * rowHeight + 8, 360))
+                .frame(height: min(listHeight, 360))
                 .onChange(of: search.selection) { _, selection in
                     guard search.results.indices.contains(selection) else { return }
                     proxy.scrollTo(search.results[selection].id)
@@ -46,10 +47,16 @@ struct SuggestionList: View {
             }
         }
     }
+
+    private var listHeight: CGFloat {
+        let count = CGFloat(search.results.count)
+        return count * rowHeight + max(count - 1, 0) * panelRowSpacing + panelContentInset * 2
+    }
 }
 
 private struct SuggestionRow: View {
     let result: SearchResult
+    let price: PriceMove?
     let isSelected: Bool
     let isAdded: Bool
 
@@ -58,25 +65,46 @@ private struct SuggestionRow: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(result.symbol)
                     .font(.system(size: 13, weight: .semibold))
-                Text(result.name)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                HStack(spacing: 0) {
+                    Text(result.name)
+                        .lineLimit(1)
+                    Text(" · \(exchange)")
+                        .fixedSize()
+                }
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
             }
             Spacer(minLength: 8)
-            Text(result.type == "ETF" ? "\(result.exchange) · ETF" : result.exchange)
-                .font(.system(size: 10))
-                .foregroundStyle(.tertiary)
-            Image(systemName: isAdded ? "checkmark.circle.fill" : "plus.circle")
-                .foregroundStyle(isAdded ? Color.green : Color.secondary)
+            Group {
+                if let price {
+                    PriceLine(move: price)
+                } else {
+                    Text("—")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .fixedSize()
+            if isAdded {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(Color.green)
+            } else {
+                Image(systemName: "plus.circle")
+                    .foregroundStyle(Color.secondary)
+                    .pointerCursor()
+            }
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 10)
         .frame(maxHeight: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 6)
                 .fill(isSelected ? Color.accentColor.opacity(0.18) : .clear)
-                .padding(.horizontal, 4)
         )
         .contentShape(Rectangle())
+    }
+
+    /// Kept outside the truncating name so a long company name never hides the exchange.
+    private var exchange: String {
+        result.type == "ETF" ? "\(result.exchange) · ETF" : result.exchange
     }
 }

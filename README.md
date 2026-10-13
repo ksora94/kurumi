@@ -12,7 +12,7 @@
 - 面板顶部是搜索框：边输入边给出美股候选（NASDAQ / NYSE / NYSE Arca 等交易所的股票和 ETF），上下键选择、回车或点击加入 watchlist
 - watchlist 垂直排列，每行显示代码、公司名、现价、涨跌额和涨跌幅（绿涨红跌）
 - 盘前 / 盘后时段，在该行下方额外显示盘前或盘后价格及相对收盘价的涨跌
-- 拖拽调整顺序，右键删除，点击某行在浏览器打开 Yahoo Finance 页面
+- 拖拽调整顺序；右键菜单可在浏览器打开 Yahoo Finance 页面或删除
 - 底部显示最后更新时间和当前市场状态（盘前 / 交易中 / 盘后 / 休市）
 - watchlist 自动保存，重启后保留
 
@@ -59,16 +59,16 @@ swift run --build-system native
 
 ```
 Sources/Kurumi/
-├── App.swift              # 入口、菜单栏图标、弹出面板、快捷键菜单
-├── YahooClient.swift      # Yahoo Finance 搜索与报价接口
-├── WatchlistStore.swift   # watchlist 持久化与轮询刷新
-├── SearchModel.swift      # 搜索状态与防抖
-├── Models.swift           # 数据模型、交易时段判断
-├── PanelView.swift        # 面板整体布局与底栏
-├── SearchField.swift      # 支持方向键 / 回车 / Esc 的搜索框
-├── SuggestionList.swift   # 搜索候选列表
-├── WatchlistView.swift    # watchlist 列表与行视图
-└── Formatting.swift       # 价格与涨跌格式化
+├── App/                   # 入口、菜单栏图标、弹出面板、快捷键菜单
+├── Models/                # 数据模型、交易时段判断、价格与涨跌格式化
+├── Services/              # Yahoo Finance 接口、watchlist 持久化与轮询刷新
+├── State/                 # 面板导航 / 排序 / 拖拽状态，搜索状态与防抖
+├── Views/
+│   ├── Panel/             # 面板整体布局、顶栏、底栏、布局常量
+│   ├── Watchlist/         # watchlist 列表、行视图、价格与涨跌标签
+│   ├── Search/            # 搜索页、搜索框、搜索候选列表
+│   └── Detail/            # 股票详情页与分时图
+└── Support/               # AppKit 桥接：拖拽、鼠标指针、Esc 监听等
 scripts/
 ├── build-app.sh           # 编译并打包 Kurumi.app
 └── make-icon.swift        # 生成应用图标

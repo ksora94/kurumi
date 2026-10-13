@@ -63,11 +63,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
     func popoverDidShow(_ notification: Notification) {
         store.isPanelVisible = true
-        NotificationCenter.default.post(name: .kurumiPanelDidShow, object: nil)
     }
 
     func popoverDidClose(_ notification: Notification) {
         store.isPanelVisible = false
+        panelState.resetPanelNavigation()
     }
 
     private static func statusImage() -> NSImage {
