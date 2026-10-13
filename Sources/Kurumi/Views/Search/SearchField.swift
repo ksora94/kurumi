@@ -28,6 +28,9 @@ struct SearchField: NSViewRepresentable {
 
     func updateNSView(_ field: NSSearchField, context: Context) {
         context.coordinator.parent = self
+        if field.placeholderString != placeholder {
+            field.placeholderString = placeholder
+        }
         if field.stringValue != text {
             field.stringValue = text
         }

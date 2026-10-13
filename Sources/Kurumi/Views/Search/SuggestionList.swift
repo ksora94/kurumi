@@ -13,7 +13,7 @@ struct SuggestionList: View {
                 if search.isLoading {
                     ProgressView().controlSize(.small)
                 } else {
-                    Text("没有找到相关股票")
+                    Text(Loc.noResults)
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                 }

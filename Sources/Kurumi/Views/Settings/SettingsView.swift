@@ -7,11 +7,11 @@ enum SettingsPage: String, CaseIterable, Identifiable {
 
     var id: Self { self }
 
-    var label: String {
+    @MainActor var label: String {
         switch self {
-        case .general: "通用"
-        case .advanced: "高级"
-        case .about: "关于"
+        case .general: Loc.general
+        case .advanced: Loc.advanced
+        case .about: Loc.about
         }
     }
 
@@ -67,10 +67,13 @@ private struct GeneralSettings: View {
     var body: some View {
         Form {
             Section {
-                Picker("涨跌配色", selection: binding(settings, \.colorScheme)) {
+                Picker(Loc.language, selection: binding(settings, \.languagePreference)) {
+                    ForEach(LanguagePreference.allCases) { Text($0.label).tag($0) }
+                }
+                Picker(Loc.colorScheme, selection: binding(settings, \.colorScheme)) {
                     ForEach(PriceColorScheme.allCases) { Text($0.label).tag($0) }
                 }
-                Toggle("开机自动启动", isOn: Binding(
+                Toggle(Loc.launchAtLogin, isOn: Binding(
                     get: { settings.launchesAtLogin },
                     set: { settings.setLaunchesAtLogin($0) }
                 ))
@@ -78,14 +81,14 @@ private struct GeneralSettings: View {
             }
 
             Section {
-                Toggle("在菜单栏显示价格", isOn: binding(settings, \.showsMenuBarPrices))
+                Toggle(Loc.showMenuBarPrices, isOn: binding(settings, \.showsMenuBarPrices))
                     .toggleStyle(.switch)
-                Picker("显示内容", selection: binding(settings, \.menuBarContent)) {
+                Picker(Loc.menuBarContent, selection: binding(settings, \.menuBarContent)) {
                     ForEach(MenuBarContent.allCases) { Text($0.label).tag($0) }
                 }
                 .disabled(!settings.showsMenuBarPrices)
-                Picker("滚动间隔", selection: binding(settings, \.scrollInterval)) {
-                    ForEach(AppSettings.scrollIntervalOptions, id: \.self) { Text("\($0) 秒").tag($0) }
+                Picker(Loc.scrollInterval, selection: binding(settings, \.scrollInterval)) {
+                    ForEach(AppSettings.scrollIntervalOptions, id: \.self) { Text(Loc.seconds($0)).tag($0) }
                 }
                 .disabled(!settings.showsMenuBarPrices)
             }
@@ -100,20 +103,20 @@ private struct AdvancedSettings: View {
     var body: some View {
         Form {
             Section {
-                Picker("后台刷新间隔", selection: binding(settings, \.refreshInterval)) {
-                    ForEach(AppSettings.refreshIntervalOptions, id: \.self) { Text("\($0) 秒").tag($0) }
+                Picker(Loc.refreshInterval, selection: binding(settings, \.refreshInterval)) {
+                    ForEach(AppSettings.refreshIntervalOptions, id: \.self) { Text(Loc.seconds($0)).tag($0) }
                 }
             } footer: {
-                Text("面板打开时每 5 秒刷新一次；休市期间自动暂停刷新。")
+                Text(Loc.refreshFootnote)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
 
             Section {
-                Toggle("显示盘前盘后价格", isOn: binding(settings, \.showsExtendedHours))
+                Toggle(Loc.showExtendedHours, isOn: binding(settings, \.showsExtendedHours))
                     .toggleStyle(.switch)
             } footer: {
-                Text("关闭后列表和详情页不再显示盘前盘后行情，菜单栏显示常规交易时段价格。")
+                Text(Loc.extendedHoursFootnote)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
@@ -124,7 +127,7 @@ private struct AdvancedSettings: View {
 
 private struct AboutSettings: View {
     private var version: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "开发版"
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? Loc.developmentBuild
     }
 
     var body: some View {
@@ -134,14 +137,14 @@ private struct AboutSettings: View {
                 .frame(width: 72, height: 72)
             Text("Kurumi")
                 .font(.system(size: 18, weight: .semibold))
-            Text("版本 \(version)")
+            Text(Loc.version(version))
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
-            Link("在 GitHub 上查看", destination: URL(string: "https://github.com/ksora94/kurumi")!)
+            Link(Loc.viewOnGitHub, destination: URL(string: "https://github.com/ksora94/kurumi")!)
                 .font(.system(size: 12))
                 .pointerCursor()
                 .padding(.top, 4)
-            Text("行情数据来自 Yahoo Finance 公开接口，可能存在延迟，仅供参考，不构成任何投资建议。")
+            Text(Loc.disclaimer)
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

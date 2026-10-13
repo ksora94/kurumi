@@ -19,12 +19,12 @@ struct SearchResult: Hashable, Identifiable {
 enum MarketSession: Equatable {
     case pre, regular, post, closed
 
-    var label: String {
+    @MainActor var label: String {
         switch self {
-        case .pre: "盘前"
-        case .regular: "交易中"
-        case .post: "盘后"
-        case .closed: "休市"
+        case .pre: Loc.preMarket
+        case .regular: Loc.regularSession
+        case .post: Loc.afterHours
+        case .closed: Loc.marketClosed
         }
     }
 
@@ -83,13 +83,13 @@ enum ChartPeriod: String, CaseIterable, Identifiable {
 
     var id: Self { self }
 
-    var label: String {
+    @MainActor var label: String {
         switch self {
-        case .intraday: "分时"
-        case .fiveMinutes: "5分钟"
-        case .oneHour: "1小时"
-        case .oneDay: "1天"
-        case .oneMonth: "1月"
+        case .intraday: Loc.periodIntraday
+        case .fiveMinutes: Loc.periodFiveMinutes
+        case .oneHour: Loc.periodOneHour
+        case .oneDay: Loc.periodOneDay
+        case .oneMonth: Loc.periodOneMonth
         }
     }
 

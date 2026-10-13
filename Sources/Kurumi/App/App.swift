@@ -24,10 +24,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
     private lazy var statusMenu: NSMenu = {
         let menu = NSMenu()
-        menu.addItem(plainMenuItem("设置", action: #selector(openSettings)))
-        menu.addItem(plainMenuItem("退出", action: #selector(quit)))
+        menu.addItem(plainMenuItem(Loc.settings, action: #selector(openSettings)))
+        menu.addItem(plainMenuItem(Loc.quit, action: #selector(quit)))
         return menu
     }()
+
+    /// Re-read before each display so the menu follows the current language.
+    private func refreshMenuTitles() {
+        statusMenu.items[0].title = Loc.settings
+        statusMenu.items[1].title = Loc.quit
+    }
 
     /// No key equivalent and no system-supplied icon.
     private func plainMenuItem(_ title: String, action: Selector) -> NSMenuItem {
@@ -75,6 +81,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         let event = NSApp.currentEvent
         if event?.type == .rightMouseUp || event?.modifierFlags.contains(.control) == true {
             popover.performClose(nil)
+            refreshMenuTitles()
             statusItem.menu = statusMenu
             sender.performClick(nil)
             statusItem.menu = nil

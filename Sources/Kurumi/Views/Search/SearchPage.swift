@@ -11,7 +11,7 @@ struct SearchPage: View {
             BackButton(action: state.closeSearch)
             SearchField(
                 text: Binding(get: { search.query }, set: { search.query = $0 }),
-                placeholder: "搜索美股代码或公司名",
+                placeholder: Loc.searchPlaceholder,
                 onMoveSelection: { search.moveSelection(by: $0) },
                 onSubmit: addSelected,
                 onCancel: {
@@ -33,7 +33,7 @@ struct SearchPage: View {
         if search.isActive {
             SuggestionList(search: search, store: store, onPick: add)
         } else {
-            Text("输入代码或公司名称")
+            Text(Loc.searchHint)
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity)

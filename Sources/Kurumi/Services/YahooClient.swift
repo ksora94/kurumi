@@ -7,7 +7,7 @@ enum YahooError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .badStatus(let code): "HTTP \(code)"
-        case .noData(let symbol): "\(symbol) 没有数据"
+        case .noData(let symbol): "No data for \(symbol)"
         }
     }
 }

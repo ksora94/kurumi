@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Period tabs above the detail chart; 分时 draws the intraday line, the rest draw candles.
+/// Period tabs above the detail chart; intraday draws a line, the rest draw candles.
 struct ChartSection: View {
     let quote: Quote?
     let state: PanelState
@@ -61,7 +61,7 @@ struct ChartPlaceholder: View {
                 ProgressView()
                     .controlSize(.small)
             } else {
-                Text("暂无图表数据")
+                Text(Loc.noChartData)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }

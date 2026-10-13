@@ -21,9 +21,9 @@ struct WatchlistView: View {
                             .frame(height: Self.rowHeight)
                             .id(item.symbol)
                         .contextMenu {
-                            Button("在 Yahoo Finance 打开") { openYahoo(item.symbol) }
+                            Button(Loc.openInYahoo) { openYahoo(item.symbol) }
                             Divider()
-                            Button("删除", role: .destructive) { store.remove(item.symbol) }
+                            Button(Loc.delete, role: .destructive) { store.remove(item.symbol) }
                         }
                         .onDrop(of: [.text], delegate: ReorderDropDelegate(target: item.symbol, store: store, state: state))
                     }

@@ -8,7 +8,8 @@ final class WatchlistStore {
     private(set) var quotes: [String: Quote] = [:]
     private(set) var periods: TradingPeriods?
     private(set) var lastUpdated: Date?
-    private(set) var lastError: String?
+    /// How many symbols failed in the last refresh, and out of how many.
+    private(set) var lastFailure: (failed: Int, total: Int)?
 
     var isPanelVisible = false {
         didSet {
@@ -85,11 +86,7 @@ final class WatchlistStore {
         }
 
         if failures < results.count { lastUpdated = .now }
-        switch failures {
-        case 0: lastError = nil
-        case results.count: lastError = "更新失败"
-        default: lastError = "\(failures) 只更新失败"
-        }
+        lastFailure = failures == 0 ? nil : (failures, results.count)
     }
 
     private func restartPolling(refreshFirst: Bool) {

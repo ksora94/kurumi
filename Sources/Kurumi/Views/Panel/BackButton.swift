@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// "返回" button shared by the search and detail page headers.
+/// Back button shared by the search and detail page headers.
 struct BackButton: View {
     let action: () -> Void
 
@@ -9,7 +9,7 @@ struct BackButton: View {
             HStack(spacing: 4) {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 11, weight: .semibold))
-                Text("返回")
+                Text(Loc.back)
                     .font(.system(size: 12, weight: .medium))
             }
             .foregroundStyle(.secondary)

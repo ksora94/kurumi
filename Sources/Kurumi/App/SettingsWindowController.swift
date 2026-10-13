@@ -12,7 +12,6 @@ final class SettingsWindowController {
         if window == nil {
             let hosting = NSHostingController(rootView: SettingsView(navigation: navigation, settings: .shared))
             let window = NSWindow(contentViewController: hosting)
-            window.title = "设置"
             window.styleMask = [.titled, .closable, .fullSizeContentView]
             window.titlebarAppearsTransparent = true
             window.titleVisibility = .hidden
@@ -21,6 +20,7 @@ final class SettingsWindowController {
             window.center()
             self.window = window
         }
+        window?.title = Loc.settings
         NSApp.activate(ignoringOtherApps: true)
         window?.makeKeyAndOrderFront(nil)
     }

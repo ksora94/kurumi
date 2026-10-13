@@ -91,29 +91,23 @@ struct DetailView: View {
 
     private var todayRows: [(String, String)] {
         let f = state.fundamentals
-        if state.fundamentalsLoading && f == nil {
-            return [
-                ("开盘", "…"), ("最高", "…"), ("最低", "…"), ("昨收", "…"), ("成交量", "…"),
-            ]
-        }
+        let loading = state.fundamentalsLoading && f == nil
         return [
-            ("开盘", Format.optionalPrice(f?.open)),
-            ("最高", Format.optionalPrice(f?.dayHigh)),
-            ("最低", Format.optionalPrice(f?.dayLow)),
-            ("昨收", Format.optionalPrice(f?.previousClose ?? quote?.previousClose)),
-            ("成交量", Format.volume(f?.volume)),
+            (Loc.open, loading ? "…" : Format.optionalPrice(f?.open)),
+            (Loc.high, loading ? "…" : Format.optionalPrice(f?.dayHigh)),
+            (Loc.low, loading ? "…" : Format.optionalPrice(f?.dayLow)),
+            (Loc.previousClose, loading ? "…" : Format.optionalPrice(f?.previousClose ?? quote?.previousClose)),
+            (Loc.volume, loading ? "…" : Format.volume(f?.volume)),
         ]
     }
 
     private var overviewRows: [(String, String)] {
         let f = state.fundamentals
-        if state.fundamentalsLoading && f == nil {
-            return [("市值", "…"), ("市盈率", "…"), ("EPS", "…")]
-        }
+        let loading = state.fundamentalsLoading && f == nil
         return [
-            ("市值", Format.marketCap(f?.marketCap)),
-            ("市盈率", Format.ratio(f?.trailingPE)),
-            ("EPS", Format.eps(f?.trailingEps)),
+            (Loc.marketCap, loading ? "…" : Format.marketCap(f?.marketCap)),
+            (Loc.peRatio, loading ? "…" : Format.ratio(f?.trailingPE)),
+            (Loc.eps, loading ? "…" : Format.eps(f?.trailingEps)),
         ]
     }
 
@@ -142,7 +136,7 @@ struct DetailView: View {
                 }
             }
             if state.fundamentalsFailed && !state.fundamentalsLoading {
-                Text("基本面暂不可用")
+                Text(Loc.fundamentalsUnavailable)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
@@ -153,6 +147,7 @@ struct DetailView: View {
         HStack(spacing: 4) {
             Text(row.0)
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
             Spacer(minLength: 2)
             Text(row.1)
                 .font(.system(size: 11).monospacedDigit())

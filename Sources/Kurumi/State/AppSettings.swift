@@ -8,10 +8,10 @@ enum PriceColorScheme: String, CaseIterable, Identifiable {
 
     var id: Self { self }
 
-    var label: String {
+    @MainActor var label: String {
         switch self {
-        case .greenUp: "绿涨红跌"
-        case .redUp: "红涨绿跌"
+        case .greenUp: Loc.greenUp
+        case .redUp: Loc.redUp
         }
     }
 }
@@ -21,10 +21,10 @@ enum MenuBarContent: String, CaseIterable, Identifiable {
 
     var id: Self { self }
 
-    var label: String {
+    @MainActor var label: String {
         switch self {
-        case .price: "价格"
-        case .percent: "涨跌幅"
+        case .price: Loc.contentPrice
+        case .percent: Loc.contentPercent
         }
     }
 }
@@ -37,6 +37,13 @@ final class AppSettings {
 
     static let scrollIntervalOptions = [3, 5, 10, 30]
     static let refreshIntervalOptions = [10, 20, 30, 60]
+
+    var languagePreference: LanguagePreference {
+        didSet { defaults.set(languagePreference.rawValue, forKey: Keys.languagePreference) }
+    }
+
+    /// The language the UI is shown in.
+    var language: Language { languagePreference.resolved }
 
     var colorScheme: PriceColorScheme {
         didSet { defaults.set(colorScheme.rawValue, forKey: Keys.colorScheme) }
@@ -71,6 +78,7 @@ final class AppSettings {
     @ObservationIgnored private let defaults = UserDefaults.standard
 
     private enum Keys {
+        static let languagePreference = "languagePreference"
         static let colorScheme = "colorScheme"
         static let showsMenuBarPrices = "showsMenuBarPrices"
         static let menuBarContent = "menuBarContent"
@@ -81,6 +89,7 @@ final class AppSettings {
 
     private init() {
         let defaults = UserDefaults.standard
+        languagePreference = LanguagePreference(rawValue: defaults.string(forKey: Keys.languagePreference) ?? "") ?? .system
         colorScheme = PriceColorScheme(rawValue: defaults.string(forKey: Keys.colorScheme) ?? "") ?? .greenUp
         showsMenuBarPrices = defaults.object(forKey: Keys.showsMenuBarPrices) as? Bool ?? true
         menuBarContent = MenuBarContent(rawValue: defaults.string(forKey: Keys.menuBarContent) ?? "") ?? .price

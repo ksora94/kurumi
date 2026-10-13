@@ -6,11 +6,14 @@ struct FooterView: View {
     var body: some View {
         TimelineView(.periodic(from: .now, by: 30)) { context in
             HStack(spacing: 6) {
-                if let lastError = store.lastError {
-                    Label(lastError, systemImage: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
+                if let failure = store.lastFailure {
+                    Label(
+                        failure.failed == failure.total ? Loc.updateFailed : Loc.someUpdatesFailed(failure.failed),
+                        systemImage: "exclamationmark.triangle.fill"
+                    )
+                    .foregroundStyle(.orange)
                 } else if let lastUpdated = store.lastUpdated {
-                    Text("更新于 \(Format.time(lastUpdated))")
+                    Text(Loc.updatedAt(Format.time(lastUpdated)))
                 }
                 Spacer()
                 if store.periods != nil {
