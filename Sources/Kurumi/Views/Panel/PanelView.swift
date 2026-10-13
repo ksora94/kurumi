@@ -24,5 +24,8 @@ struct PanelView: View {
             FooterView(store: store)
         }
         .frame(width: panelWidth)
+        // While the popover catches up to a new content height, keep the top still instead of
+        // letting SwiftUI center the content in the old frame.
+        .frame(minHeight: 0, maxHeight: .infinity, alignment: .top)
     }
 }

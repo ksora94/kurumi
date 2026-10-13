@@ -12,19 +12,16 @@ struct DetailView: View {
         VStack(alignment: .leading, spacing: 0) {
             headerBar
             Divider()
-            ScrollView {
-                VStack(alignment: .leading, spacing: 10) {
-                    priceBlock
-                    if state.metricsExpanded {
-                        metrics
-                            .transition(.opacity)
-                    }
-                    ChartSection(quote: quote, state: state)
+            VStack(alignment: .leading, spacing: 10) {
+                priceBlock
+                if state.metricsExpanded {
+                    metrics
+                        .transition(.opacity)
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
+                ChartSection(quote: quote, state: state)
             }
-            .frame(maxHeight: 520)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
         }
         .background(EscapeMonitor { state.closeDetail() })
         .onExitCommand { state.closeDetail() }

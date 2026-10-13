@@ -29,8 +29,8 @@ struct WatchlistView: View {
                     }
                 }
                 .padding(panelContentInset)
+                .overlayScrollers()
             }
-            .scrollIndicators(.automatic)
             .frame(height: listHeight)
             .onAppear {
                 if let symbol = state.recentlyAdded {
