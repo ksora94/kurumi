@@ -74,6 +74,46 @@ struct IntradayPoint: Equatable, Identifiable {
     let price: Double
 }
 
+/// Time scale of the detail chart: the intraday line or one of the candlestick intervals.
+enum ChartPeriod: String, CaseIterable, Identifiable {
+    case intraday, fiveMinutes, oneHour, oneDay, oneMonth
+
+    /// Candlestick charts show the most recent bars so they stay readable at panel width.
+    static let candleCount = 80
+
+    var id: Self { self }
+
+    var label: String {
+        switch self {
+        case .intraday: "分时"
+        case .fiveMinutes: "5分钟"
+        case .oneHour: "1小时"
+        case .oneDay: "1天"
+        case .oneMonth: "1月"
+        }
+    }
+
+    /// Yahoo chart interval plus a range long enough to cover `candleCount` bars.
+    var chartQuery: (interval: String, range: String)? {
+        switch self {
+        case .intraday: nil
+        case .fiveMinutes: ("5m", "5d")
+        case .oneHour: ("60m", "3mo")
+        case .oneDay: ("1d", "6mo")
+        case .oneMonth: ("1mo", "10y")
+        }
+    }
+}
+
+struct Candle: Equatable, Identifiable {
+    let id: Int
+    let time: Date
+    let open: Double
+    let high: Double
+    let low: Double
+    let close: Double
+}
+
 struct Quote: Equatable {
     let symbol: String
     let name: String?

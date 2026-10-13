@@ -19,8 +19,20 @@ final class PanelState {
     private(set) var fundamentals: Fundamentals?
     private(set) var fundamentalsLoading = false
     private(set) var fundamentalsFailed = false
+    /// Whether the detail page's metric grid is expanded; collapsed each time a detail opens.
+    private(set) var metricsExpanded = false
+
+    /// Remembered across stocks and launches.
+    private(set) var chartPeriod = ChartPeriod(
+        rawValue: UserDefaults.standard.string(forKey: PanelState.chartPeriodKey) ?? ""
+    ) ?? .intraday
+    private(set) var candles: [Candle] = []
+    private(set) var candlesLoading = false
 
     @ObservationIgnored private var fundamentalsTask: Task<Void, Never>?
+    @ObservationIgnored private var candlesTask: Task<Void, Never>?
+
+    private static let chartPeriodKey = "chartPeriod"
 
     var isShowingDetail: Bool { detailSymbol != nil }
 
@@ -67,12 +79,29 @@ final class PanelState {
     func openDetail(_ symbol: String) {
         detailSymbol = symbol
         hoveredSymbol = nil
+        metricsExpanded = false
         loadFundamentals(for: symbol)
+        loadCandles(for: symbol)
+    }
+
+    func toggleMetrics() {
+        withAnimation(.easeOut(duration: 0.2)) { metricsExpanded.toggle() }
+    }
+
+    func selectChartPeriod(_ period: ChartPeriod) {
+        guard period != chartPeriod else { return }
+        chartPeriod = period
+        UserDefaults.standard.set(period.rawValue, forKey: Self.chartPeriodKey)
+        if let detailSymbol { loadCandles(for: detailSymbol) }
     }
 
     func closeDetail() {
         fundamentalsTask?.cancel()
         fundamentalsTask = nil
+        candlesTask?.cancel()
+        candlesTask = nil
+        candles = []
+        candlesLoading = false
         detailSymbol = nil
         fundamentals = nil
         fundamentalsLoading = false
@@ -99,6 +128,23 @@ final class PanelState {
             fundamentals = fetched
             fundamentalsFailed = fetched == nil
             fundamentalsLoading = false
+        }
+    }
+
+    private func loadCandles(for symbol: String) {
+        candlesTask?.cancel()
+        candles = []
+        guard chartPeriod != .intraday else {
+            candlesLoading = false
+            return
+        }
+        candlesLoading = true
+        let period = chartPeriod
+        candlesTask = Task {
+            let fetched = try? await YahooClient.shared.candles(symbol, period: period)
+            guard !Task.isCancelled, detailSymbol == symbol, chartPeriod == period else { return }
+            candles = fetched ?? []
+            candlesLoading = false
         }
     }
 }

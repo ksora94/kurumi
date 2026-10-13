@@ -15,19 +15,11 @@ struct DetailView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {
                     priceBlock
-                    section("今日", rows: todayRows)
-                    section("概况", rows: overviewRows)
-                    if state.fundamentalsFailed && !state.fundamentalsLoading {
-                        Text("基本面暂不可用")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
+                    if state.metricsExpanded {
+                        metrics
+                            .transition(.opacity)
                     }
-                    IntradayChart(quote: quote)
-                    Button("在 Yahoo Finance 打开") { openYahoo(symbol) }
-                        .buttonStyle(.plain)
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-                        .pointerCursor()
+                    ChartSection(quote: quote, state: state)
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
@@ -41,23 +33,35 @@ struct DetailView: View {
     private var headerBar: some View {
         HStack(spacing: 8) {
             BackButton { state.closeDetail() }
-
             Spacer(minLength: 8)
-
-            Text(symbol)
-                .font(.system(size: 13, weight: .semibold))
-                .lineLimit(1)
+            HeaderIconButton(systemName: "arrow.up.right.square") { openYahoo(symbol) }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.leading, 12)
+        .padding(.trailing, 10)
+        .frame(height: panelBarHeight)
     }
 
     private var priceBlock: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(item?.name ?? quote?.name ?? symbol)
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(symbol)
+                    .font(.system(size: 13, weight: .semibold))
+                Text(item?.name ?? quote?.name ?? "")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                Spacer(minLength: 4)
+                Button(action: state.toggleMetrics) {
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(state.metricsExpanded ? 180 : 0))
+                        .frame(width: 20, height: 16)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .pointerCursor()
+            }
 
             if let move = quote?.regular {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -113,22 +117,34 @@ struct DetailView: View {
         ]
     }
 
-    private func section(_ title: String, rows: [(String, String)]) -> some View {
+    private static let metricColumns = 3
+
+    /// Each group starts on a new line, three metrics per line.
+    private var metricLines: [[(String, String)]] {
+        [todayRows, overviewRows].flatMap { rows in
+            stride(from: 0, to: rows.count, by: Self.metricColumns).map {
+                Array(rows[$0..<min($0 + Self.metricColumns, rows.count)])
+            }
+        }
+    }
+
+    private var metrics: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(title)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.secondary)
-            VStack(spacing: 4) {
-                ForEach(Array(stride(from: 0, to: rows.count, by: 2)), id: \.self) { index in
-                    HStack(alignment: .firstTextBaseline, spacing: 12) {
-                        metricCell(rows[index])
-                        if index + 1 < rows.count {
-                            metricCell(rows[index + 1])
+            ForEach(Array(metricLines.enumerated()), id: \.offset) { _, line in
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    ForEach(0..<Self.metricColumns, id: \.self) { column in
+                        if column < line.count {
+                            metricCell(line[column])
                         } else {
-                            Color.clear.frame(maxWidth: .infinity)
+                            Color.clear.frame(maxWidth: .infinity, maxHeight: 0)
                         }
                     }
                 }
+            }
+            if state.fundamentalsFailed && !state.fundamentalsLoading {
+                Text("基本面暂不可用")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
             }
         }
     }
@@ -140,6 +156,7 @@ struct DetailView: View {
             Spacer(minLength: 2)
             Text(row.1)
                 .font(.system(size: 11).monospacedDigit())
+                .foregroundStyle(Color.primary.opacity(0.75))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
         }

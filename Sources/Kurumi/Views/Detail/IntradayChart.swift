@@ -8,26 +8,12 @@ struct IntradayChart: View {
     private var lineColor: Color { quote?.regular.color ?? .secondary }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("分时")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.secondary)
-
-            Group {
-                if points.count >= 2 {
-                    chart
-                } else if quote == nil {
-                    ProgressView()
-                        .controlSize(.small)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    Text("暂无分时数据")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-            }
-            .frame(height: 130)
+        if points.count >= 2 {
+            chart
+        } else if quote == nil {
+            ChartPlaceholder(isLoading: true)
+        } else {
+            ChartPlaceholder(isLoading: false)
         }
     }
 

@@ -101,6 +101,36 @@ struct YahooClient: Sendable {
         return points
     }
 
+    /// Most recent regular-session candles for the detail chart.
+    func candles(_ symbol: String, period: ChartPeriod) async throws -> [Candle] {
+        guard let query = period.chartQuery else { return [] }
+        let escaped = symbol.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? symbol
+        var components = URLComponents(string: "https://query1.finance.yahoo.com/v8/finance/chart/\(escaped)")!
+        components.queryItems = [
+            URLQueryItem(name: "interval", value: query.interval),
+            URLQueryItem(name: "range", value: query.range),
+            URLQueryItem(name: "includePrePost", value: "false"),
+        ]
+        let response: ChartResponse = try await get(components.url!)
+        guard let result = response.chart.result?.first,
+              let timestamps = result.timestamp,
+              let series = result.indicators.quote.first,
+              let opens = series.open, let highs = series.high,
+              let lows = series.low, let closes = series.close
+        else { throw YahooError.noData(symbol) }
+
+        let count = [timestamps.count, opens.count, highs.count, lows.count, closes.count].min() ?? 0
+        let bars = (0..<count).compactMap { index -> (Date, Double, Double, Double, Double)? in
+            guard let open = opens[index], let high = highs[index],
+                  let low = lows[index], let close = closes[index]
+            else { return nil }
+            return (timestamps[index], open, high, low, close)
+        }
+        return bars.suffix(ChartPeriod.candleCount).enumerated().map { offset, bar in
+            Candle(id: offset, time: bar.0, open: bar.1, high: bar.2, low: bar.3, close: bar.4)
+        }
+    }
+
     /// Day stats + valuation fields for the detail page (cookie/crumb required).
     func fundamentals(_ symbol: String) async throws -> Fundamentals {
         try await auth.withCrumb { crumb in
@@ -291,6 +321,9 @@ private struct ChartResult: Decodable {
     }
 
     struct Series: Decodable {
+        let open: [Double?]?
+        let high: [Double?]?
+        let low: [Double?]?
         let close: [Double?]?
     }
 }
