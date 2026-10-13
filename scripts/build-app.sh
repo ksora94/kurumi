@@ -21,7 +21,7 @@ else
         -target "$(uname -m)-apple-macosx14.0" \
         -sdk "$(xcrun --show-sdk-path)" \
         -parse-as-library \
-        Sources/Kurumi/*.swift \
+        $(find Sources/Kurumi -name '*.swift') \
         -o "$BIN_DIR/$APP_NAME"
 fi
 
