@@ -38,6 +38,7 @@ struct SuggestionList: View {
                         }
                     }
                     .padding(panelContentInset)
+                    .overlayScrollers()
                 }
                 .frame(height: min(listHeight, 360))
                 .onChange(of: search.selection) { _, selection in

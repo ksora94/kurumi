@@ -23,7 +23,10 @@ private final class ConfiguratorView: NSView {
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         guard window != nil else { return detach() }
-        // The enclosing scroll view isn't reachable until SwiftUI finishes building the hierarchy.
+        // Must happen before SwiftUI's first layout: it narrows the content to leave room for a
+        // legacy scroller and doesn't re-measure when the style changes afterwards.
+        attach()
+        // Fallback in case the enclosing scroll view isn't in the hierarchy yet.
         DispatchQueue.main.async { [weak self] in self?.attach() }
     }
 
