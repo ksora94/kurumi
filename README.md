@@ -4,49 +4,49 @@
 
 <h1 align="center">Kurumi</h1>
 
-<p align="center">一个常驻 macOS 菜单栏的美股实时行情小工具。</p>
+<p align="center">Real-time US stock prices in your macOS menu bar.</p>
 
-Kurumi 安静地待在菜单栏里：抬眼就能看到自选股的最新价格，点一下就能展开完整的行情面板。原生 SwiftUI 编写，轻量、不占 Dock，支持 macOS 14 及以上系统。
+Kurumi lives quietly in your menu bar: glance up to see the latest prices of your watchlist, or click to open a full quote panel. It's a lightweight native SwiftUI app with no Dock icon, and runs on macOS 14 or later.
 
-## 功能
+## Features
 
-### 菜单栏行情
+### Menu bar ticker
 
-- 菜单栏轮流滚动显示自选股的代码和最新价格，以红绿色标签区分涨跌
-- 盘前、盘后时段显示盘前盘后价格，盘中显示实时价格
-- 鼠标悬停时暂停滚动，方便看清当前这只
-- 左键点击打开行情面板，右键点击打开菜单（设置、退出）
+- Cycles through your watchlist in the menu bar, showing each symbol with its latest price on a red or green tag
+- Shows pre-market and after-hours prices outside regular hours, and the live price during the session
+- Pauses while you hover so you can read the current one
+- Left-click opens the quote panel; right-click opens a menu with Settings and Quit
 
-### 自选股列表
+### Watchlist
 
-- 每只股票显示代码、公司名、现价和涨跌幅
-- 盘前、盘后时段额外显示盘前盘后价格及涨跌
-- 排序模式下可拖拽调整顺序、删除股票
-- 右键单只股票可在 Yahoo Finance 打开或删除
-- 底部显示最后更新时间和市场状态（盘前、交易中、盘后、休市）
-- 自选股自动保存，重启后保留
+- Each stock shows its symbol, company name, current price and percent change
+- Pre-market and after-hours prices and changes appear below during those sessions
+- Sort mode lets you drag to reorder and remove stocks
+- Right-click a stock to open it in Yahoo Finance or delete it
+- The footer shows the last update time and the market status (pre-market, open, after-hours, closed)
+- Your watchlist is saved automatically and restored on relaunch
 
-### 搜索添加
+### Search
 
-- 边输入边给出美股候选，覆盖 NASDAQ、NYSE、NYSE Arca 等交易所的股票和 ETF
-- 候选项附带最新价格，键盘上下选择、回车即可加入自选
+- Suggests US stocks and ETFs as you type, across NASDAQ, NYSE, NYSE Arca and other exchanges
+- Suggestions include the latest price; pick one with the arrow keys and press Return to add it
 
-### 股票详情
+### Stock details
 
-- 现价、涨跌额、涨跌幅，以及盘前盘后行情
-- 可展开的关键指标：开盘、最高、最低、昨收、成交量、市值、市盈率、EPS
-- 分时走势图，以及 5 分钟、1 小时、1 天、1 月 K 线图，会记住上次选择的周期
-- 一键跳转到 Yahoo Finance 查看更多信息
+- Current price, change and percent change, plus pre-market and after-hours quotes
+- Collapsible key metrics: open, high, low, previous close, volume, market cap, P/E and EPS
+- Intraday line chart and 5-minute, 1-hour, 1-day and 1-month candlestick charts, remembering your last choice
+- One click to open the stock in Yahoo Finance
 
-### 设置
+### Settings
 
-- 语言：简体中文、English、日本語，默认跟随系统
-- 外观：浅色、深色，默认跟随系统
-- 涨跌配色：绿涨红跌或红涨绿跌
-- 开机自动启动
-- 菜单栏：是否显示价格、显示价格还是涨跌幅、滚动间隔
-- 后台刷新间隔，以及是否显示盘前盘后行情
+- Language: Simplified Chinese, English or Japanese, following the system by default
+- Appearance: light or dark, following the system by default
+- Price colors: green for gains and red for losses, or the reverse
+- Launch at login
+- Menu bar: whether to show prices, price or percent change, and how often to cycle
+- Background refresh interval, and whether to show pre-market and after-hours quotes
 
-## 数据来源
+## Data source
 
-行情数据来自 Yahoo Finance 的公开网页接口，可能存在延迟，仅供参考，不构成任何投资建议。
+Market data comes from Yahoo Finance's public web endpoints and may be delayed. It's for reference only and is not investment advice.
