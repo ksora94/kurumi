@@ -1,4 +1,5 @@
 import Foundation
+import Network
 import Observation
 
 @MainActor
@@ -20,6 +21,10 @@ final class WatchlistStore {
 
     @ObservationIgnored private var pollTask: Task<Void, Never>?
     @ObservationIgnored private let client = YahooClient.shared
+    /// Refreshes in a row where every symbol failed, e.g. while offline.
+    @ObservationIgnored private var consecutiveFailures = 0
+    @ObservationIgnored private let pathMonitor = NWPathMonitor()
+    @ObservationIgnored private var isOnline = true
     private static let defaultsKey = "watchlist"
 
     init() {
@@ -30,6 +35,18 @@ final class WatchlistStore {
     }
 
     func start() {
+        restartPolling(refreshFirst: true)
+        pathMonitor.pathUpdateHandler = { [weak self] path in
+            let online = path.status == .satisfied
+            Task { @MainActor in self?.networkChanged(online: online) }
+        }
+        pathMonitor.start(queue: .main)
+    }
+
+    /// Refreshes right away when the network comes back, if the last refresh failed.
+    private func networkChanged(online: Bool) {
+        defer { isOnline = online }
+        guard online, !isOnline, consecutiveFailures > 0 else { return }
         restartPolling(refreshFirst: true)
     }
 
@@ -85,6 +102,7 @@ final class WatchlistStore {
             if let periods = quote.periods { self.periods = periods }
         }
 
+        consecutiveFailures = failures == results.count ? consecutiveFailures + 1 : 0
         if failures < results.count { lastUpdated = .now }
         lastFailure = failures == 0 ? nil : (failures, results.count)
     }
@@ -104,7 +122,12 @@ final class WatchlistStore {
 
     /// Polls fast while a session (pre/regular/post) is open, otherwise sleeps until the next
     /// known pre-market open, re-checking at least every 30 minutes in case the schedule changed.
+    /// After a refresh where everything failed, retries soon (backing off to a minute) instead,
+    /// since without data the trading schedule is unknown and the market looks closed.
     private func nextPollDelay() -> TimeInterval {
+        if consecutiveFailures > 0 {
+            return min(5 * pow(2, Double(consecutiveFailures - 1)), 60)
+        }
         let now = Date.now
         if session(at: now).isActive {
             return isPanelVisible ? 5 : TimeInterval(AppSettings.shared.refreshInterval)

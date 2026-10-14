@@ -72,7 +72,7 @@ Sources/Kurumi/
 | Detail metrics | `query1 /v10/finance/quoteSummary` | needs a cookie (from `fc.yahoo.com`) and crumb (`/v1/test/getcrumb`), handled by `YahooAuth`; retried once on 401/403 |
 
 - **Extended hours.** The pre/post price is the latest 1m candle after `regularMarketTime`, compared against the regular price. `Quote.visibleExtended` hides it when the user turns extended hours off; `Quote.latestMove` (used by the menu bar) is the latest visible price against the previous close.
-- **Polling** (`WatchlistStore.nextPollDelay`): every 5 s while the popover is open during a session (pre/regular/post); `AppSettings.refreshInterval` seconds while it's closed; when the market is closed, sleep until the next known pre-market start, re-checking at least every 30 minutes. Opening the popover restarts polling with an immediate refresh.
+- **Polling** (`WatchlistStore.nextPollDelay`): every 5 s while the popover is open during a session (pre/regular/post); `AppSettings.refreshInterval` seconds while it's closed; when the market is closed, sleep until the next known pre-market start, re-checking at least every 30 minutes. Opening the popover restarts polling with an immediate refresh. If every symbol fails (e.g. offline at launch, when the trading schedule is still unknown and the market looks closed), it retries after 5 s, backing off to 60 s, and an `NWPathMonitor` triggers an immediate refresh when the network comes back.
 - **Persistence.** The watchlist is JSON in UserDefaults key `watchlist`; the chart period is in `chartPeriod`; settings use the keys in `AppSettings.Keys`.
 
 ### Settings
