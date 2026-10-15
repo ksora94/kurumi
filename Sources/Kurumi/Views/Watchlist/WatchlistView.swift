@@ -15,7 +15,7 @@ struct WatchlistView: View {
             ScrollView {
                 VStack(spacing: panelRowSpacing) {
                     ForEach(store.items) { item in
-                        WatchRow(item: item, quote: store.quotes[item.symbol], state: state) {
+                        WatchRow(item: item, quote: store.quotes[item.symbol], hourlyCloses: store.hourlyCloses[item.symbol] ?? [], state: state) {
                             delete(item.symbol)
                         }
                             .frame(height: Self.rowHeight)

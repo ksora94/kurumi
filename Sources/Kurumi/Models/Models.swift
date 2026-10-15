@@ -93,6 +93,18 @@ enum ChartPeriod: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Compact time for the hover readout and the chart's x-axis labels.
+    func pointerTime(_ date: Date) -> String {
+        switch self {
+        case .intraday, .fiveMinutes:
+            date.formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits))
+        case .oneHour, .oneDay:
+            date.formatted(.dateTime.month(.twoDigits).day(.twoDigits))
+        case .oneMonth:
+            date.formatted(.dateTime.year().month(.twoDigits))
+        }
+    }
+
     /// Yahoo chart interval plus a range long enough to cover `candleCount` bars.
     var chartQuery: (interval: String, range: String)? {
         switch self {

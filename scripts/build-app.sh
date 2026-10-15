@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.."
 
 APP_NAME="Kurumi"
 BUNDLE_ID="com.cyan.kurumi"
-VERSION="0.1.0"
+VERSION="0.2.0"
 APP_DIR="build/${APP_NAME}.app"
 
 # Prefer SwiftPM. On some CLT installs (e.g. Swift 6.4 on macOS 27) PackageDescription

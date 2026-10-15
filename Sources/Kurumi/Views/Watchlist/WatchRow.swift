@@ -5,6 +5,7 @@ import SwiftUI
 struct WatchRow: View {
     let item: WatchItem
     let quote: Quote?
+    let hourlyCloses: [Double]
     let state: PanelState
     let onDelete: () -> Void
 
@@ -30,7 +31,7 @@ struct WatchRow: View {
                             .frame(width: Self.handleWidth)
                             .transition(.move(edge: .leading).combined(with: .opacity))
                     }
-                    WatchRowContent(item: item, quote: quote)
+                    WatchRowContent(item: item, quote: quote, hourlyCloses: hourlyCloses)
                         .padding(.leading, isSorting ? 0 : Self.contentInset)
                         .padding(.trailing, isSorting ? 0 : Self.contentInset)
                 }
@@ -44,7 +45,7 @@ struct WatchRow: View {
                     DragHandle(
                         symbol: item.symbol,
                         rowWidth: panelWidth - panelContentInset * 2,
-                        preview: { DragPreviewCard(item: item, quote: quote) },
+                        preview: { DragPreviewCard(item: item, quote: quote, hourlyCloses: hourlyCloses) },
                         onBegin: { state.beginDrag(item.symbol) },
                         onEnd: { state.endDrag() }
                     )
@@ -88,9 +89,10 @@ struct WatchRow: View {
 private struct DragPreviewCard: View {
     let item: WatchItem
     let quote: Quote?
+    let hourlyCloses: [Double]
 
     var body: some View {
-        WatchRowContent(item: item, quote: quote)
+        WatchRowContent(item: item, quote: quote, hourlyCloses: hourlyCloses)
             .padding(.horizontal, 10)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(
@@ -107,6 +109,7 @@ private struct DragPreviewCard: View {
 private struct WatchRowContent: View {
     let item: WatchItem
     let quote: Quote?
+    let hourlyCloses: [Double]
 
     var body: some View {
         HStack(spacing: 8) {
@@ -118,7 +121,14 @@ private struct WatchRowContent: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-            Spacer(minLength: 8)
+            if hourlyCloses.count >= 2 {
+                Spacer(minLength: 4)
+                Sparkline(prices: hourlyCloses, color: quote?.regular.color ?? .secondary)
+                    .frame(width: 72, height: 28)
+                Spacer(minLength: 4)
+            } else {
+                Spacer(minLength: 8)
+            }
             VStack(alignment: .trailing, spacing: 3) {
                 if let move = quote?.regular {
                     PriceLine(move: move)

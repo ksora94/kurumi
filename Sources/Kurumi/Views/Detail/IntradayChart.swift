@@ -3,6 +3,7 @@ import SwiftUI
 
 struct IntradayChart: View {
     let quote: Quote?
+    let state: PanelState
 
     private var points: [IntradayPoint] { quote?.intraday ?? [] }
     private var lineColor: Color { quote?.regular.color ?? .secondary }
@@ -69,5 +70,38 @@ struct IntradayChart: View {
             }
         }
         .chartLegend(.hidden)
+        .chartOverlay { proxy in
+            ChartHoverSurface(state: state, period: .intraday, proxy: proxy) { location, plot, proxy in
+                Self.pointer(at: location, plot: plot, proxy: proxy, points: points)
+            }
+        }
+        .cursor(.crosshair)
+    }
+
+    /// Snaps the guide to the nearest minute; the price is wherever the pointer sits vertically.
+    private static func pointer(at location: CGPoint, plot: CGRect, proxy: ChartProxy, points: [IntradayPoint]) -> ChartPointer? {
+        guard plot.contains(location), let nearest = nearest(toX: location.x - plot.minX, proxy: proxy, points: points) else {
+            return nil
+        }
+        guard let price = proxy.value(atY: location.y - plot.minY, as: Double.self), price.isFinite,
+              let x = proxy.position(forX: nearest.time)
+        else { return nil }
+        return ChartPointer(time: nearest.time, price: price, x: x)
+    }
+
+    private static func nearest(toX x: CGFloat, proxy: ChartProxy, points: [IntradayPoint]) -> IntradayPoint? {
+        guard let date = proxy.value(atX: x, as: Date.self), let first = points.first else { return nil }
+        if date <= first.time { return first }
+        guard let last = points.last else { return nil }
+        if date >= last.time { return last }
+        var low = 0
+        var high = points.count - 1
+        while low < high {
+            let mid = (low + high) / 2
+            if points[mid].time < date { low = mid + 1 } else { high = mid }
+        }
+        let previous = points[max(low - 1, 0)]
+        return abs(previous.time.timeIntervalSince(date)) <= abs(points[low].time.timeIntervalSince(date))
+            ? previous : points[low]
     }
 }
