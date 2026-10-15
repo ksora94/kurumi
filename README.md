@@ -19,7 +19,7 @@ Kurumi lives quietly in your menu bar: glance up to see the latest prices of you
 
 ### Watchlist
 
-- Each stock shows its symbol, company name, current price and percent change
+- Each stock shows its symbol, company name, a preview of recent hourly prices, the current price and the percent change
 - Pre-market and after-hours prices and changes appear below during those sessions
 - Sort mode lets you drag to reorder and remove stocks
 - Right-click a stock to open it in Yahoo Finance or delete it
@@ -35,7 +35,7 @@ Kurumi lives quietly in your menu bar: glance up to see the latest prices of you
 
 - Current price, change and percent change, plus pre-market and after-hours quotes
 - Collapsible key metrics: open, high, low, previous close, volume, market cap, P/E and EPS
-- Intraday line chart and 5-minute, 1-hour, 1-day and 1-month candlestick charts, remembering your last choice
+- Intraday line chart and 5-minute, 1-hour, 1-day and 1-month candlestick charts, remembering your last choice. Moving the pointer over a chart shows that bar's time and the price under the pointer
 - One click to open the stock in Yahoo Finance
 
 ### Settings

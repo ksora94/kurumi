@@ -11,21 +11,27 @@ final class WatchlistStore {
     private(set) var lastUpdated: Date?
     /// How many symbols failed in the last refresh, and out of how many.
     private(set) var lastFailure: (failed: Int, total: Int)?
+    /// Recent hourly closes for the watchlist preview, refreshed separately from live quotes.
+    private(set) var hourlyCloses: [String: [Double]] = [:]
 
     var isPanelVisible = false {
         didSet {
             guard isPanelVisible != oldValue else { return }
             restartPolling(refreshFirst: isPanelVisible)
+            restartHourly()
         }
     }
 
     @ObservationIgnored private var pollTask: Task<Void, Never>?
+    @ObservationIgnored private var hourlyTask: Task<Void, Never>?
+    @ObservationIgnored private var hourlyFetchedAt: [String: Date] = [:]
     @ObservationIgnored private let client = YahooClient.shared
     /// Refreshes in a row where every symbol failed, e.g. while offline.
     @ObservationIgnored private var consecutiveFailures = 0
     @ObservationIgnored private let pathMonitor = NWPathMonitor()
     @ObservationIgnored private var isOnline = true
     private static let defaultsKey = "watchlist"
+    private static let hourlyInterval: TimeInterval = 60 * 60
 
     init() {
         if let data = UserDefaults.standard.data(forKey: Self.defaultsKey),
@@ -43,11 +49,13 @@ final class WatchlistStore {
         pathMonitor.start(queue: .main)
     }
 
-    /// Refreshes right away when the network comes back, if the last refresh failed.
+    /// Refreshes right away when the network comes back, if the last quote refresh failed
+    /// or an hourly preview is still missing.
     private func networkChanged(online: Bool) {
         defer { isOnline = online }
-        guard online, !isOnline, consecutiveFailures > 0 else { return }
-        restartPolling(refreshFirst: true)
+        guard online, !isOnline else { return }
+        if consecutiveFailures > 0 { restartPolling(refreshFirst: true) }
+        if isPanelVisible, !symbolsDueForHourly().isEmpty { restartHourly() }
     }
 
     func session(at date: Date = .now) -> MarketSession {
@@ -63,11 +71,14 @@ final class WatchlistStore {
         items.append(WatchItem(symbol: result.symbol, name: result.name))
         save()
         Task { await refresh(symbols: [result.symbol]) }
+        Task { await refreshHourly(symbols: [result.symbol]) }
     }
 
     func remove(_ symbol: String) {
         items.removeAll { $0.symbol == symbol }
         quotes[symbol] = nil
+        hourlyCloses[symbol] = nil
+        hourlyFetchedAt[symbol] = nil
         save()
     }
 
@@ -105,6 +116,59 @@ final class WatchlistStore {
         consecutiveFailures = failures == results.count ? consecutiveFailures + 1 : 0
         if failures < results.count { lastUpdated = .now }
         lastFailure = failures == 0 ? nil : (failures, results.count)
+    }
+
+    /// Loads hourly closes when the panel opens, then refreshes them hourly while it stays open.
+    /// Quotes keep their own, much faster poll.
+    private func restartHourly() {
+        hourlyTask?.cancel()
+        guard isPanelVisible else { return }
+        hourlyTask = Task { [weak self] in
+            guard let self else { return }
+            await self.refreshHourly(symbols: self.symbolsDueForHourly())
+            if !Task.isCancelled, !self.symbolsDueForHourly().isEmpty {
+                try? await Task.sleep(for: .seconds(60))
+                guard !Task.isCancelled else { return }
+                await self.refreshHourly(symbols: self.symbolsDueForHourly())
+            }
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(Self.hourlyInterval))
+                guard !Task.isCancelled, self.isPanelVisible else { return }
+                await self.refreshHourly(symbols: self.items.map(\.symbol))
+            }
+        }
+    }
+
+    private func symbolsDueForHourly() -> [String] {
+        let now = Date.now
+        return items.map(\.symbol).filter { symbol in
+            guard let fetched = hourlyFetchedAt[symbol] else { return true }
+            return now.timeIntervalSince(fetched) >= Self.hourlyInterval
+        }
+    }
+
+    private func refreshHourly(symbols: [String]) async {
+        guard !symbols.isEmpty else { return }
+        let client = client
+        let results = await withTaskGroup(of: (String, [Double]?).self) { group in
+            for symbol in symbols {
+                group.addTask {
+                    let candles = try? await client.candles(symbol, period: .oneHour)
+                    return (symbol, candles?.map(\.close))
+                }
+            }
+            var collected: [(String, [Double]?)] = []
+            for await result in group { collected.append(result) }
+            return collected
+        }
+        guard !Task.isCancelled else { return }
+
+        let now = Date.now
+        for (symbol, closes) in results {
+            guard contains(symbol), let closes, closes.count >= 2 else { continue }
+            hourlyCloses[symbol] = closes
+            hourlyFetchedAt[symbol] = now
+        }
     }
 
     private func restartPolling(refreshFirst: Bool) {

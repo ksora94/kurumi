@@ -19,9 +19,9 @@ struct ChartSection: View {
 
             Group {
                 if state.chartPeriod == .intraday {
-                    IntradayChart(quote: quote)
+                    IntradayChart(quote: quote, state: state)
                 } else {
-                    CandleChart(candles: state.candles, period: state.chartPeriod, isLoading: state.candlesLoading)
+                    CandleChart(candles: state.candles, period: state.chartPeriod, isLoading: state.candlesLoading, state: state)
                 }
             }
             .frame(height: 200)

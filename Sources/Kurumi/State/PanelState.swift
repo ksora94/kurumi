@@ -2,6 +2,14 @@ import Foundation
 import Observation
 import SwiftUI
 
+/// The detail chart's hover readout: the nearest bar's time, the price under the pointer,
+/// and the bar's x position in the chart view.
+struct ChartPointer: Equatable {
+    var time: Date
+    var price: Double
+    var x: CGFloat
+}
+
 /// View state lives in observable objects instead of `@State`: SwiftUI's property-wrapper
 /// macros ship only with Xcode, and this project builds with the Command Line Tools.
 @MainActor
@@ -28,6 +36,8 @@ final class PanelState {
     ) ?? .intraday
     private(set) var candles: [Candle] = []
     private(set) var candlesLoading = false
+    /// Set while the pointer is over the detail chart.
+    var chartPointer: ChartPointer?
 
     @ObservationIgnored private var fundamentalsTask: Task<Void, Never>?
     @ObservationIgnored private var candlesTask: Task<Void, Never>?
@@ -80,6 +90,7 @@ final class PanelState {
         detailSymbol = symbol
         hoveredSymbol = nil
         metricsExpanded = false
+        chartPointer = nil
         loadFundamentals(for: symbol)
         loadCandles(for: symbol)
     }
@@ -90,6 +101,7 @@ final class PanelState {
 
     func selectChartPeriod(_ period: ChartPeriod) {
         guard period != chartPeriod else { return }
+        chartPointer = nil
         chartPeriod = period
         UserDefaults.standard.set(period.rawValue, forKey: Self.chartPeriodKey)
         if let detailSymbol { loadCandles(for: detailSymbol) }
@@ -102,6 +114,7 @@ final class PanelState {
         candlesTask = nil
         candles = []
         candlesLoading = false
+        chartPointer = nil
         detailSymbol = nil
         fundamentals = nil
         fundamentalsLoading = false

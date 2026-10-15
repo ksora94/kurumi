@@ -6,6 +6,7 @@ struct CandleChart: View {
     let candles: [Candle]
     let period: ChartPeriod
     let isLoading: Bool
+    let state: PanelState
 
     /// Room reserved for the trailing price labels when sizing candle bodies.
     private static let yAxisWidth: CGFloat = 40
@@ -59,7 +60,7 @@ struct CandleChart: View {
                         .foregroundStyle(Color.primary.opacity(0.06))
                     AxisValueLabel {
                         if let index = value.as(Double.self), candles.indices.contains(Int(index)) {
-                            Text(timeLabel(candles[Int(index)].time))
+                            Text(period.pointerTime(candles[Int(index)].time))
                                 .font(.system(size: 9))
                                 .foregroundStyle(.secondary)
                         }
@@ -80,22 +81,29 @@ struct CandleChart: View {
                 }
             }
             .chartLegend(.hidden)
+            .chartOverlay { proxy in
+                ChartHoverSurface(state: state, period: period, proxy: proxy) { location, plot, proxy in
+                    Self.pointer(at: location, plot: plot, proxy: proxy, candles: candles)
+                }
+            }
+            .cursor(.crosshair)
         }
+    }
+
+    /// Snaps the guide to the nearest candle; the price is wherever the pointer sits vertically.
+    private static func pointer(at location: CGPoint, plot: CGRect, proxy: ChartProxy, candles: [Candle]) -> ChartPointer? {
+        guard plot.contains(location), !candles.isEmpty else { return nil }
+        guard let raw = proxy.value(atX: location.x - plot.minX, as: Double.self),
+              let price = proxy.value(atY: location.y - plot.minY, as: Double.self),
+              price.isFinite
+        else { return nil }
+        let index = min(max(Int(raw.rounded()), 0), candles.count - 1)
+        guard let x = proxy.position(forX: Double(candles[index].id)) else { return nil }
+        return ChartPointer(time: candles[index].time, price: price, x: x)
     }
 
     /// Three labels at 1/6, 3/6 and 5/6 of the width, clear of the plot edges.
     private var tickIndices: [Double] {
         [1.0, 3.0, 5.0].map { (Double(candles.count) * $0 / 6).rounded(.down) }
-    }
-
-    private func timeLabel(_ date: Date) -> String {
-        switch period {
-        case .intraday, .fiveMinutes:
-            date.formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute())
-        case .oneHour, .oneDay:
-            date.formatted(.dateTime.month(.defaultDigits).day())
-        case .oneMonth:
-            date.formatted(.dateTime.year().month(.defaultDigits))
-        }
     }
 }
