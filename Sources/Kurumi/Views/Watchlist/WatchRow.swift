@@ -35,11 +35,12 @@ struct WatchRow: View {
                         .padding(.leading, isSorting ? 0 : Self.contentInset)
                         .padding(.trailing, isSorting ? 0 : Self.contentInset)
                 }
-                .frame(maxHeight: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .allowsHitTesting(!isSorting)
+            .frame(maxWidth: .infinity)
             .overlay {
                 if isSorting {
                     DragHandle(
@@ -111,7 +112,15 @@ private struct WatchRowContent: View {
     let quote: Quote?
     let hourlyCloses: [Double]
 
+    private static let sparklineWidth: CGFloat = 72
+    private static let sparklineHeight: CGFloat = 28
+    /// Wide enough for the price + pill and a typical extended-hours line; fixed so the
+    /// sparkline column stays aligned across rows.
+    private static let priceColumnWidth: CGFloat = 118
+
     var body: some View {
+        // Name takes the leftover width; sparkline and price use fixed widths so every row
+        // shares the same columns regardless of company name or price text length.
         HStack(spacing: 8) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.symbol)
@@ -121,14 +130,15 @@ private struct WatchRowContent: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-            if hourlyCloses.count >= 2 {
-                Spacer(minLength: 4)
-                Sparkline(prices: hourlyCloses, color: quote?.regular.color ?? .secondary)
-                    .frame(width: 72, height: 28)
-                Spacer(minLength: 4)
-            } else {
-                Spacer(minLength: 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Group {
+                if hourlyCloses.count >= 2 {
+                    Sparkline(prices: hourlyCloses, color: quote?.regular.color ?? .secondary)
+                }
             }
+            .frame(width: Self.sparklineWidth, height: Self.sparklineHeight)
+
             VStack(alignment: .trailing, spacing: 3) {
                 if let move = quote?.regular {
                     PriceLine(move: move)
@@ -141,6 +151,8 @@ private struct WatchRowContent: View {
                                 .foregroundStyle(extended.move.color)
                         }
                         .font(.system(size: 10).monospacedDigit())
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                     }
                 } else {
                     Text("—")
@@ -148,7 +160,7 @@ private struct WatchRowContent: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            .fixedSize()
+            .frame(width: Self.priceColumnWidth, alignment: .trailing)
         }
     }
 }
