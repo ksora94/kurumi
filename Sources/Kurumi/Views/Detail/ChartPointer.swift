@@ -31,7 +31,8 @@ struct ChartHoverSurface: View {
     }
 }
 
-/// Vertical guide with the snapped bar's time and the price at the pointer's height.
+/// Vertical guide with the snapped bar's time and the price at the guide–bar intersection,
+/// plus a small filled dot on that intersection.
 private struct ChartPointerGuide: View {
     let pointer: ChartPointer
     let period: ChartPeriod
@@ -40,6 +41,7 @@ private struct ChartPointerGuide: View {
     private static let labelFont = NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .medium)
     private static let labelPaddingX: CGFloat = 6
     private static let labelPaddingY: CGFloat = 2
+    private static let dotSize: CGFloat = 6
 
     private var labelText: String {
         "\(period.pointerTime(pointer.time))  \(Format.price(pointer.price))"
@@ -51,6 +53,11 @@ private struct ChartPointerGuide: View {
                 .fill(Color.primary.opacity(0.35))
                 .frame(width: 1, height: max(plot.height, 0))
                 .position(x: pointer.x, y: plot.midY)
+            Circle()
+                .fill(pointer.tone.color)
+                .overlay(Circle().strokeBorder(Color.primary.opacity(0.2), lineWidth: 1))
+                .frame(width: Self.dotSize, height: Self.dotSize)
+                .position(x: pointer.x, y: pointer.y)
             Text(labelText)
                 .font(.system(size: 10, weight: .medium).monospacedDigit())
                 .foregroundStyle(.primary)

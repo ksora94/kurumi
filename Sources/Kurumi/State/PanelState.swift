@@ -2,12 +2,27 @@ import Foundation
 import Observation
 import SwiftUI
 
-/// The detail chart's hover readout: the nearest bar's time, the price under the pointer,
-/// and the bar's x position in the chart view.
+/// Color of the hover intersection dot: matches the candle / line's up or down tint.
+enum ChartPointerTone: Equatable {
+    case up, down, secondary
+
+    @MainActor var color: Color {
+        switch self {
+        case .up: AppSettings.shared.upColor
+        case .down: AppSettings.shared.downColor
+        case .secondary: .secondary
+        }
+    }
+}
+
+/// The detail chart's hover readout: the nearest bar's time, the price at the guide's
+/// intersection with that bar, and the intersection's position in the chart view.
 struct ChartPointer: Equatable {
     var time: Date
     var price: Double
     var x: CGFloat
+    var y: CGFloat
+    var tone: ChartPointerTone
 }
 
 /// View state lives in observable objects instead of `@State`: SwiftUI's property-wrapper

@@ -72,21 +72,34 @@ struct IntradayChart: View {
         .chartLegend(.hidden)
         .chartOverlay { proxy in
             ChartHoverSurface(state: state, period: .intraday, proxy: proxy) { location, plot, proxy in
-                Self.pointer(at: location, plot: plot, proxy: proxy, points: points)
+                Self.pointer(at: location, plot: plot, proxy: proxy, points: points, tone: lineTone)
             }
         }
         .cursor(.crosshair)
     }
 
-    /// Snaps the guide to the nearest minute; the price is wherever the pointer sits vertically.
-    private static func pointer(at location: CGPoint, plot: CGRect, proxy: ChartProxy, points: [IntradayPoint]) -> ChartPointer? {
+    private var lineTone: ChartPointerTone {
+        guard let change = quote?.regular.change else { return .secondary }
+        if change > 0 { return .up }
+        if change < 0 { return .down }
+        return .secondary
+    }
+
+    /// Snaps the guide to the nearest minute; the price is that point's price on the line.
+    private static func pointer(
+        at location: CGPoint,
+        plot: CGRect,
+        proxy: ChartProxy,
+        points: [IntradayPoint],
+        tone: ChartPointerTone
+    ) -> ChartPointer? {
         guard plot.contains(location), let nearest = nearest(toX: location.x - plot.minX, proxy: proxy, points: points) else {
             return nil
         }
-        guard let price = proxy.value(atY: location.y - plot.minY, as: Double.self), price.isFinite,
-              let x = proxy.position(forX: nearest.time)
+        guard let x = proxy.position(forX: nearest.time),
+              let y = proxy.position(forY: nearest.price)
         else { return nil }
-        return ChartPointer(time: nearest.time, price: price, x: x)
+        return ChartPointer(time: nearest.time, price: nearest.price, x: x, y: y, tone: tone)
     }
 
     private static func nearest(toX x: CGFloat, proxy: ChartProxy, points: [IntradayPoint]) -> IntradayPoint? {

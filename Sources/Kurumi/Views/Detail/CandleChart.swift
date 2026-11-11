@@ -90,16 +90,23 @@ struct CandleChart: View {
         }
     }
 
-    /// Snaps the guide to the nearest candle; the price is wherever the pointer sits vertically.
+    /// Snaps the guide to the nearest candle; the price is open or close, whichever is closer
+    /// to the pointer's height within that candle's body.
     private static func pointer(at location: CGPoint, plot: CGRect, proxy: ChartProxy, candles: [Candle]) -> ChartPointer? {
         guard plot.contains(location), !candles.isEmpty else { return nil }
         guard let raw = proxy.value(atX: location.x - plot.minX, as: Double.self),
-              let price = proxy.value(atY: location.y - plot.minY, as: Double.self),
-              price.isFinite
+              let cursorPrice = proxy.value(atY: location.y - plot.minY, as: Double.self),
+              cursorPrice.isFinite
         else { return nil }
         let index = min(max(Int(raw.rounded()), 0), candles.count - 1)
-        guard let x = proxy.position(forX: Double(candles[index].id)) else { return nil }
-        return ChartPointer(time: candles[index].time, price: price, x: x)
+        let candle = candles[index]
+        let price = abs(cursorPrice - candle.open) <= abs(cursorPrice - candle.close)
+            ? candle.open : candle.close
+        guard let x = proxy.position(forX: Double(candle.id)),
+              let y = proxy.position(forY: price)
+        else { return nil }
+        let tone: ChartPointerTone = candle.close >= candle.open ? .up : .down
+        return ChartPointer(time: candle.time, price: price, x: x, y: y, tone: tone)
     }
 
     /// Three labels at 1/6, 3/6 and 5/6 of the width, clear of the plot edges.
